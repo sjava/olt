@@ -23,11 +23,12 @@ if index==0:
                 child.sendline(" ")
             elif index==1:
                 print child.before
-                print "over"
+                print "success"
                 child.close(force=True)
                 break
             else:
                 print "over"
+                child.close(force=True)
                 break
     else:
         child.close(force=True)
