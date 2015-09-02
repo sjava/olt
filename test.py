@@ -39,4 +39,5 @@ else:
 temp=result.split('\r\n')
 lrslt=[x.strip(' \x08') for x in temp if x.strip(' \x08').startswith('epon')]
 
-print lrslt
+for x in lrslt:
+    print x
