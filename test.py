@@ -21,17 +21,14 @@ if index==0:
         while True:
             index=child.expect(["--More--","#",pexpect.EOF,pexpect.TIMEOUT])
             if index==0:
-                print child.before
                 result += child.before
                 child.sendline(" ")
             elif index==1:
-                print child.before
-                print "success"
                 result += child.before
                 child.close(force=True)
                 break
             else:
-                print "over"
+                print "fail"
                 child.close(force=True)
                 break
     else:
