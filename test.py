@@ -42,8 +42,6 @@ else:
 temp=result.split('\r\n')
 lrst=[x.strip(' \x08') for x in temp if x.strip(' \x08').startswith('epon')]
 lrst=[re.split('\s+',x) for x in lrst]
-
-lrst=sorted(lrst,key=lambda x:int(x[5]))
 for key, items in groupby(lrst,itemgetter(5)):
     items=list(items)
     if len(items)>1:
