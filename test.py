@@ -6,6 +6,8 @@ ip="61.147.42.81"
 username="zte"
 passwd="zteqsc"
 
+result=""
+
 child=pexpect.spawn("telnet %s" % ip)
 index=child.expect(["[uU]sername:",pexpect.EOF,pexpect.TIMEOUT])
 if index==0:
@@ -20,11 +22,12 @@ if index==0:
             index=child.expect(["--More--","#",pexpect.EOF,pexpect.TIMEOUT])
             if index==0:
                 print child.before
+                result += child.before
                 child.sendline(" ")
             elif index==1:
-                print "last"
                 print child.before
                 print "success"
+                result += child.before
                 child.close(force=True)
                 break
             else:
@@ -35,3 +38,5 @@ if index==0:
         child.close(force=True)
 else:
     child.close(force=True)
+
+print result
