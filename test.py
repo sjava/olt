@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import pexpect
+import re
+from itertools import groupby
+from operator import itemgetter
 
 ip="61.147.42.81"
 username="zte"
@@ -37,7 +40,16 @@ else:
 
 
 temp=result.split('\r\n')
-lrslt=[x.strip(' \x08') for x in temp if x.strip(' \x08').startswith('epon')]
+lrst=[x.strip(' \x08') for x in temp if x.strip(' \x08').startswith('epon')]
 
-for x in lrslt:
+for x in lrst:
     print x
+
+lrst=sorted(lrst,key=lambda x:x[5])
+for key, items in groupby(lrst,itemgetter(5)):
+    items=list(items)
+    if len(items)>1:
+        print key
+        for i in items:
+            print i
+        print "-"*20
