@@ -21,9 +21,13 @@ if index==0:
             if index==0:
                 print child.before
                 child.sendline(" ")
-            else:
+            elif index==1:
+                print child.before
                 print "over"
                 child.close(force=True)
+                break
+            else:
+                print "over"
                 break
     else:
         child.close(force=True)
