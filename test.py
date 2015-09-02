@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 import pexpect
 
-ip=""
-username=""
-passwd=""
+ip="61.147.42.81"
+username="zte"
+passwd="zteqsc"
 
 child=pexpect.spawn("telnet %s" % ip)
 index=child.expect(["[uU]sername:",pexpect.EOF,pexpect.TIMEOUT])
