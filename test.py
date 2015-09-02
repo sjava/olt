@@ -17,7 +17,7 @@ if index==0:
         child.sendline("show vlan-smart-qinq")
         child.expect("show vlan-smart-qinq")
         while True:
-            index=child.expect(["--More--",".*#",pexpect.EOF,pexpect.TIMEOUT])
+            index=child.expect(["--More--","#",pexpect.EOF,pexpect.TIMEOUT])
             if index==0:
                 print child.before
                 child.sendline(" ")
