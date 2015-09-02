@@ -22,6 +22,7 @@ if index==0:
                 print child.before
                 child.sendline(" ")
             elif index==1:
+                print "last"
                 print child.before
                 print "success"
                 child.close(force=True)
