@@ -28,7 +28,6 @@ if index==0:
                 child.close(force=True)
                 break
             else:
-                print "fail"
                 child.close(force=True)
                 break
     else:
@@ -36,4 +35,8 @@ if index==0:
 else:
     child.close(force=True)
 
-print result
+
+temp=result.split('\r\n')
+lrslt=[x.strip(' \x08') for x in temp if x.strip(' \x08').startswith('epon')]
+
+print lrslt
