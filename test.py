@@ -22,12 +22,14 @@ if index==0:
                 print child.before
                 child.sendline(" ")
             elif index==1:
+                print "last"
                 print child.before
-                print "over"
+                print "success"
                 child.close(force=True)
                 break
             else:
                 print "over"
+                child.close(force=True)
                 break
     else:
         child.close(force=True)
