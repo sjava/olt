@@ -20,7 +20,7 @@ def zte(ip, username="", passwd="", filename="result.txt"):
     :returns: TODO
 
     """
-    result=""
+    result = ""
 
     child = pexpect.spawn("telnet %s" % ip)
     index = child.expect(["[uU]sername:", pexpect.EOF, pexpect.TIMEOUT])
