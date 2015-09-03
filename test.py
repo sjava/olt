@@ -9,8 +9,6 @@ ip = ""
 username = ""
 passwd = ""
 
-result = ""
-
 
 def zte(ip, username="", passwd="", filename="result.txt"):
     """TODO: Docstring for zte.
@@ -22,6 +20,8 @@ def zte(ip, username="", passwd="", filename="result.txt"):
     :returns: TODO
 
     """
+    result = ""
+
     child = pexpect.spawn("telnet %s" % ip)
     index = child.expect(["[uU]sername:", pexpect.EOF, pexpect.TIMEOUT])
     if index == 0:
