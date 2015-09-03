@@ -21,6 +21,7 @@ def zte(ip, username="", passwd="", filename="result.txt"):
 
     """
     result = ""
+    mark = "success"
 
     child = pexpect.spawn("telnet %s" % ip)
     index = child.expect(["[uU]sername:", pexpect.EOF, pexpect.TIMEOUT])
@@ -45,21 +46,32 @@ def zte(ip, username="", passwd="", filename="result.txt"):
                     child.close(force=True)
                     break
         else:
+            mark = "fail"
             child.close(force=True)
     else:
+        mark = "fail"
         child.close(force=True)
 
-    temp = result.split('\r\n')
-    lrst = [x.strip(' \x08') for x in temp if x.strip(' \x08').startswith('epon')]
-    lrst = [re.split('\s+', x) for x in lrst]
-    lrst = sorted(lrst, key=lambda x: int(x[5]))
+    if mark == "success":
+        temp = result.split('\r\n')
+        lrst = [x.strip(' \x08') for x in temp if x.strip(' \x08').startswith('epon')]
+        lrst = [re.split('\s+', x) for x in lrst]
+        lrst = sorted(lrst, key=lambda x: int(x[5]))
 
-    for key, items in groupby(lrst, itemgetter(5)):
-        items = list(items)
-        if len(items) > 1:
-            print key
-            for i in items:
-                print i
-            print "-" * 20
+        with open(filename, "a") as fh:
+            fh.write("%s: %s" % (ip, mark))
+            for key, items in groupby(lrst, itemgetter(5)):
+                items = list(items)
+                if len(items) > 1:
+                    print key
+                    fh.write("SVLAN: %s" % key)
+                    for i in items:
+                        print i
+                        fh.write(i)
+                    print "-" * 20
+                    fh.write("-" * 20)
+    else:
+        with open(filename, "a") as fh:
+            fh.write("%s: %s" % (ip, mark))
 
 zte(ip, username, passwd)
