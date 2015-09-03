@@ -5,9 +5,9 @@ import re
 from itertools import groupby
 from operator import itemgetter
 
-ip="61.147.42.81"
-username="zte"
-passwd="zteqsc"
+ip=""
+username=""
+passwd=""
 
 
 def zte(ip, username="", passwd="", filename="result.txt"):
@@ -59,19 +59,20 @@ def zte(ip, username="", passwd="", filename="result.txt"):
         lrst = sorted(lrst, key=lambda x: int(x[5]))
 
         with open(filename, "a") as fh:
-            fh.write("%s: %s" % (ip, mark))
+            fh.write("%s: %s\n" % (ip, mark))
             for key, items in groupby(lrst, itemgetter(5)):
                 items = list(items)
                 if len(items) > 1:
                     print key
-                    fh.write("SVLAN: %s" % key)
+                    fh.write("SVLAN: %s\n" % key)
                     for i in items:
                         print i
-                        fh.write(i)
+                        fh.write(" ".join(i)+'\n')
                     print "-" * 20
-                    fh.write("-" * 20)
+                    fh.write("-" * 20+'\n')
     else:
         with open(filename, "a") as fh:
-            fh.write("%s: %s" % (ip, mark))
+            fh.write("%s: %s\n" % (ip, mark))
+            fh.write("-" * 20+'\n')
 
 zte(ip, username, passwd)
