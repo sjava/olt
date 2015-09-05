@@ -55,9 +55,9 @@ def zte_gpon(child, slots):
                 child.send(" ")
             elif index == 1:
                 result += child.before
-                records = clear_zte_gpon(result, records)
                 child.sendline("exit")
                 child.close(force=True)
+                records = clear_zte_gpon(result, records)
                 break
             else:
                 mark = "fail"
@@ -89,18 +89,16 @@ def zte_epon(child):
             result += child.before
             child.sendline("exit")
             child.close(force=True)
+            result = result.split('\r\n')
+            result = [x.strip(' \x08') for x in result if x.strip(' \x08').startswith('epon')]
+            result = [re.split('\s+', x) for x in result]
+            for x in result:
+                records.setdefault(x[5], set()).add(x[0])
             break
         else:
             mark = "fail"
             child.close(force=True)
             break
-    result = result.split('\r\n')
-    result = [x.strip(' \x08') for x in result if x.strip(' \x08').startswith('epon')]
-    result = [re.split('\s+', x) for x in result]
-    result = sorted(result, key=lambda x: int(x[5]))
-    for key, items in groupby(result, itemgetter(5)):
-        for item in items:
-            records.setdefault(key, set()).add(item)
     return mark, records
 
 
