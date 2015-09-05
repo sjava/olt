@@ -55,14 +55,15 @@ def zte_gpon(child, slots):
                 child.send(" ")
             elif index == 1:
                 result += child.before
-                child.sendline("exit")
-                child.close(force=True)
                 records = clear_zte_gpon(result, records)
                 break
             else:
                 mark = "fail"
                 child.close(force=True)
                 break
+    if mark == 'success':
+        child.sendline("exit")
+        child.close(force=True)
     return mark, records
 
 
