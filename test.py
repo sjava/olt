@@ -61,6 +61,7 @@ def zte_gpon(child, slots):
                 mark = "fail"
                 child.close(force=True)
                 break
+    child.sendline("exit")
     child.close(force=True)
     return mark, records
 
@@ -108,6 +109,7 @@ def zte(ip, username="", passwd="", filename="result.txt"):
     else:
         mark = "fail"
         child.close(force=True)
+    return mark, records
 
 
 def zte_epon(ip, username="", passwd="", filename="result.txt"):
