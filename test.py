@@ -5,9 +5,9 @@ import re
 from itertools import groupby
 from operator import itemgetter
 
-ip = ""
-username = ""
-passwd = ""
+ip = "61.147.42.81"
+username = "zte"
+passwd = "zteqsc"
 
 
 def zte(ip, username="", passwd="", filename="result.txt"):
@@ -37,7 +37,7 @@ def zte(ip, username="", passwd="", filename="result.txt"):
                 index = child.expect(["--More--", "#", pexpect.EOF, pexpect.TIMEOUT])
                 if index == 0:
                     result += child.before
-                    child.sendline(" ")
+                    child.send(" ")
                 elif index == 1:
                     result += child.before
                     child.close(force=True)
