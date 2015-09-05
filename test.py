@@ -97,10 +97,8 @@ def zte_epon(child):
     result = result.split('\r\n')
     result = [x.strip(' \x08') for x in result if x.strip(' \x08').startswith('epon')]
     result = [re.split('\s+', x) for x in result]
-    result = sorted(result, key=lambda x: int(x[5]))
-    for key, items in groupby(result, itemgetter(5)):
-        for item in items:
-            records.setdefault(key, set()).add(item)
+    for x in result:
+        records.setdefault(x[5],set()).add(x[0])
     return mark, records
 
 
