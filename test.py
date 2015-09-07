@@ -206,7 +206,11 @@ def huawei(ip, username, passwd):
     else:
         mark = "fail"
         child.close(force=True)
-    return mark,result
+
+    result = result.split('\r\n')
+    result = [x.replace("\x1b[37D", "").strip() for x in result
+              if "QinQ" in x]
+    return mark, result
 
 
 def zte_epon1(ip, username="", passwd="", filename="result.txt"):
