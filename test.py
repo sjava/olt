@@ -10,7 +10,7 @@ username = "zte"
 passwd = "zteqsc"
 
 
-def clear_zte_gpon(result, dict):
+def clear_zte_gpon(result, records):
     """TODO: Docstring for clear_zte_gpon.
 
     :result: TODO
@@ -28,9 +28,9 @@ def clear_zte_gpon(result, dict):
             continue
         if 'YES' in x:
             svlan = re.split('\s+', x)[1]
-            dict.setdefault(svlan, set()).add(port)
+            records.setdefault(svlan, set()).add(port)
             continue
-    return dict
+    return records
 
 
 def zte_gpon(child, slots):
@@ -207,10 +207,17 @@ def huawei(ip, username, passwd):
         mark = "fail"
         child.close(force=True)
 
-    result = result.split('\r\n')
-    result = [x.replace("\x1b[37D", "").strip() for x in result
-              if "QinQ" in x]
-    return mark, result
+    if mark == "success":
+        result = result.split('\r\n')
+        result = [x.replace("\x1b[37D", "").strip() for x in result
+                  if "QinQ" in x]
+        for x in result:
+            x = s.split()
+            svlan = x[1]
+            port = x[3] + '_' + x[4] + x[5]
+            records.setdefault(svlan, set()).add(port)
+
+    return mark, records
 
 
 def zte_epon1(ip, username="", passwd="", filename="result.txt"):
