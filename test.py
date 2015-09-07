@@ -149,6 +149,18 @@ def zte(ip, username="", passwd="", filename="result.txt"):
     return mark, records
 
 
+def hw(ip, usename, passwd):
+    """TODO: Docstring for hw.
+
+    :ip: TODO
+    :use: TODO
+    :returns: TODO
+
+    """
+    mark = "success"
+    records = {}
+
+
 def zte_epon1(ip, username="", passwd="", filename="result.txt"):
     """TODO: Docstring for zte.
 
