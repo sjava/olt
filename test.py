@@ -212,7 +212,7 @@ def huawei(ip, username, passwd):
         result = [x.replace("\x1b[37D", "").strip() for x in result
                   if "QinQ" in x]
         for x in result:
-            x = s.split()
+            x = x.split()
             svlan = x[1]
             port = x[3] + '_' + x[4] + x[5]
             records.setdefault(svlan, set()).add(port)
