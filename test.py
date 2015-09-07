@@ -5,9 +5,33 @@ import re
 from itertools import groupby
 from operator import itemgetter
 
-ip = "61.147.42.81"
-username = "zte"
-passwd = "zteqsc"
+def svlan(olts_file, result_file):
+    """TODO: Docstring for svlan.
+
+    :olts_file: TODO
+    :result_file: TODO
+    :returns: TODO
+
+    """
+    with open(olts_file) as olts, open(result_file, 'w') as fout:
+        for olt in olts.readline():
+            mark = "fail"
+            records = {}
+
+            olt = olt.split(',')
+            if olt[1] == "zte":
+                mark, records = zte(olt[0], "", "")
+            else:
+                mark, records = huawei(olt[0], "", "")
+
+            fout.write("%s: %s\n" % (olt[0], mark))
+            if mark == "success":
+                for svlan, ports in records:
+                    if len(ports) > 1:
+                        fout.write("%s %s\n" % (' ' * 4, svlan))
+                        for port in ports:
+                            fout.write("%s\n" % port)
+            fout.write("%s\n" % '*' * 50)
 
 
 def clear_zte_gpon(result, records):
@@ -104,7 +128,7 @@ def zte_epon(child):
     return mark, records
 
 
-def zte(ip, username="", passwd="", filename="result.txt"):
+def zte(ip, username="", passwd=""):
     """TODO: Docstring for zte.
 
     :ip: TODO
@@ -166,9 +190,15 @@ def huawei(ip, username, passwd):
     fout = file("1.log", "w")
     child.logfile = fout
 
-    child.expect(["User name:", pexpect.EOF, pexpect.TIMEOUT])
+    index = child.expect(["User name:", pexpect.EOF, pexpect.TIMEOUT])
+    if index != 0:
+        child.close(force=True)
+        return mark, records
     child.sendline(username)
-    child.expect(["User password:", pexpect.EOF, pexpect.TIMEOUT])
+    index = child.expect(["User password:", pexpect.EOF, pexpect.TIMEOUT])
+    if index != 0:
+        child.close(force=True)
+        return mark, records
     child.sendline(passwd)
 
     index = child.expect([">", "---- More.*----",
@@ -218,71 +248,3 @@ def huawei(ip, username, passwd):
             records.setdefault(svlan, set()).add(port)
 
     return mark, records
-
-
-def zte_epon1(ip, username="", passwd="", filename="result.txt"):
-    """TODO: Docstring for zte.
-
-    :ip: TODO
-    :username: TODO
-    :passwd: TODO
-    :filename: TODO
-    :returns: TODO
-
-    """
-    result = ""
-    mark = "success"
-
-    child = pexpect.spawn("telnet %s" % ip)
-    index = child.expect(["[uU]sername:", pexpect.EOF, pexpect.TIMEOUT])
-    if index == 0:
-        child.sendline(username)
-        index = child.expect(["[pP]assword:", pexpect.EOF, pexpect.TIMEOUT])
-        child.sendline(passwd)
-        index = child.expect([".*#", pexpect.EOF, pexpect.TIMEOUT])
-        if index == 0:
-            child.sendline("show vlan-smart-qinq")
-            child.expect("show vlan-smart-qinq")
-            while True:
-                index = child.expect(["--More--", "#", pexpect.EOF, pexpect.TIMEOUT])
-                if index == 0:
-                    result += child.before
-                    child.send(" ")
-                elif index == 1:
-                    result += child.before
-                    child.close(force=True)
-                    break
-                else:
-                    child.close(force=True)
-                    break
-        else:
-            mark = "fail"
-            child.close(force=True)
-    else:
-        mark = "fail"
-        child.close(force=True)
-
-    if mark == "success":
-        temp = result.split('\r\n')
-        lrst = [x.strip(' \x08') for x in temp if x.strip(' \x08').startswith('epon')]
-        lrst = [re.split('\s+', x) for x in lrst]
-        lrst = sorted(lrst, key=lambda x: int(x[5]))
-
-        with open(filename, "a") as fh:
-            fh.write("%s: %s\n" % (ip, mark))
-            for key, items in groupby(lrst, itemgetter(5)):
-                items = list(items)
-                if len(items) > 1:
-                    #  print key
-                    fh.write("SVLAN: %s\n" % key)
-                    for i in items:
-                        #  print i
-                        fh.write(" ".join(i) + '\n')
-                    #  print "-" * 20
-                    fh.write("-" * 20 + '\n')
-    else:
-        with open(filename, "a") as fh:
-            fh.write("%s: %s\n" % (ip, mark))
-            fh.write("-" * 20 + '\n')
-
-#  zte(ip, username, passwd)
