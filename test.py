@@ -195,7 +195,7 @@ def huawei(ip, username, passwd):
                 result += child.before
                 mark = "success"
                 child.sendline("quit")
-                child.expect("[n]:")
+                child.expect([".*:"])
                 child.sendline("y")
                 child.close()
                 break
@@ -206,7 +206,7 @@ def huawei(ip, username, passwd):
     else:
         mark = "fail"
         child.close(force=True)
-    return mark.result
+    return mark,result
 
 
 def zte_epon1(ip, username="", passwd="", filename="result.txt"):
