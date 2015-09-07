@@ -15,7 +15,7 @@ def svlan(olts_file, result_file):
 
     """
     with open(olts_file) as olts, open(result_file, 'w') as fout:
-        for olt in olts.readline():
+        for olt in olts:
             mark = "fail"
             records = {}
 
