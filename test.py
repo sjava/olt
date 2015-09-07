@@ -56,7 +56,7 @@ def zte_gpon(child, slots):
             elif index == 1:
                 result += child.before
                 records = clear_zte_gpon(result, records)
-                mark="success"
+                mark = "success"
                 break
             else:
                 mark = "fail"
@@ -96,7 +96,7 @@ def zte_epon(child):
             result = [re.split('\s+', x) for x in result]
             for x in result:
                 records.setdefault(x[5], set()).add(x[0])
-            mark="success"
+            mark = "success"
             break
         else:
             child.close(force=True)
@@ -147,7 +147,8 @@ def zte(ip, username="", passwd="", filename="result.txt"):
         child.close(force=True)
     return mark, records
 
-def huawei(ip,username,passwd):
+
+def huawei(ip, username, passwd):
     """TODO: Docstring for huawei.
 
     :ip: TODO
@@ -156,23 +157,24 @@ def huawei(ip,username,passwd):
     :returns: TODO
 
     """
-    mark="fail"
-    records={}
+    mark = "fail"
+    result = ""
+    records = {}
 
-    child=pexpect.spawn("telnet %s" % ip)
+    child = pexpect.spawn("telnet %s" % ip)
 
-    fout=file("1.log","w")
-    child.logfile=fout
+    fout = file("1.log", "w")
+    child.logfile = fout
 
-    child.expect(["User name:",pexpect.EOF,pexpect.TIMEOUT])
+    child.expect(["User name:", pexpect.EOF, pexpect.TIMEOUT])
     child.sendline(username)
-    child.expect(["User password:",pexpect.EOF,pexpect.TIMEOUT])
+    child.expect(["User password:", pexpect.EOF, pexpect.TIMEOUT])
     child.sendline(passwd)
 
-    index=child.expect([">","---- More.*----",
-        pexpect.EOF,pexpect.TIMEOUT])
-    if index<2:
-        if index==1:
+    index = child.expect([">", "---- More.*----",
+                          pexpect.EOF, pexpect.TIMEOUT])
+    if index < 2:
+        if index == 1:
             child.send(" ")
             child.expect(">")
         child.sendline("enable")
@@ -183,9 +185,28 @@ def huawei(ip,username,passwd):
         child.expect(["}:"])
         child.sendline("")
         while True:
-            index=child.expect(["---- More.*----","#"])
+            index = child.expect(["---- More.*----", "#",
+                                  pexpect.EOF, pexpect.TIMEOUT])
+            if index == 0:
+                result += child.before
+                child.send(" ")
+                continue
+            elif index == 1:
+                result += child.before
+                mark = "success"
+                child.sendline("quit")
+                child.expect("[n]:")
+                child.sendline("y")
+                child.close()
+                break
+            else:
+                mark = "fail"
+                child.close(force=True)
+                break
     else:
-        pass
+        mark = "fail"
+        child.close(force=True)
+    return mark.result
 
 
 def zte_epon1(ip, username="", passwd="", filename="result.txt"):
