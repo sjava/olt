@@ -22,7 +22,7 @@ def svlan(olts_file, result_file):
             olt1 = olt.strip('\n')
             print olt1
             olt = olt1.split(',')
-            if olt[1].low() == "zte":
+            if olt[1].lower() == "zte":
                 mark, records = zte(olt[0], "", "")
             elif olt[1].lower() == "hw":
                 mark, records = huawei(olt[0], "", "")
