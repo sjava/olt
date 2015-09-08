@@ -14,24 +14,25 @@ def svlan(olts_file, result_file):
 
     """
     with open(olts_file) as olts, open(result_file, 'w') as fout:
-        for olt in olts.readline():
+        for olt in olts:
             mark = "fail"
             records = {}
 
-            olt = olt.split(',')
+            print olt
+            olt = olt.strip('\n').split(',')
             if olt[1] == "zte":
-                mark, records = zte(olt[0], "", "")
+                mark, records = zte(olt[0], "zte", "zteqsc")
             else:
-                mark, records = huawei(olt[0], "", "")
+                mark, records = huawei(olt[0], "root", "hwswzx!@#456")
 
             fout.write("%s: %s\n" % (olt[0], mark))
             if mark == "success":
-                for svlan, ports in records:
+                for svlan, ports in records.items():
                     if len(ports) > 1:
                         fout.write("%s %s\n" % (' ' * 4, svlan))
                         for port in ports:
                             fout.write("%s\n" % port)
-            fout.write("%s\n" % '*' * 50)
+            fout.write("%s\n" % ('*' * 50))
 
 
 def clear_zte_gpon(result, records):
