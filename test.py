@@ -20,8 +20,7 @@ def svlan(olts_file, result_file):
             records = {}
 
             print olt
-            olt = olt.split(',')
-            olt[1] = olt[1].strip('\n')
+            olt = olt.strip('\n').split(',')
             if olt[1] == "zte":
                 mark, records = zte(olt[0], "", "")
             else:
@@ -34,7 +33,7 @@ def svlan(olts_file, result_file):
                         fout.write("%s svlan:%s\n" % (' ' * 4, svlan))
                         for port in ports:
                             fout.write("%s\n" % port)
-            fout.write("%s\n\n" % ('*' * 500))
+            fout.write("%s\n\n" % ('*' * 50))
 
 
 def clear_zte_gpon(result, records):
