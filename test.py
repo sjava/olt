@@ -161,9 +161,9 @@ def zte(ip, username="", passwd=""):
             child.expect("show card")
             index = child.expect(["--More--", "#", pexpect.EOF, pexpect.TIMEOUT])
             print child.before
-            if index==0:
-                child.send(' ')
             temp = child.before.split('\r\n')
+            if index == 0:
+                child.send(' ')
             slots = [x.split()[2] for x in temp if x.startswith('1')
                      and x.find('GTGO') >= 0
                      and x.find('INSERVICE') >= 0]
