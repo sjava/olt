@@ -27,7 +27,7 @@ def svlan(olts_file, result_file):
 
             fout.write("%s: %s\n" % (olt[0], mark))
             if mark == "success":
-                for svlan, ports in records:
+                for svlan, ports in records.items():
                     if len(ports) > 1:
                         fout.write("%s %s\n" % (' ' * 4, svlan))
                         for port in ports:
@@ -160,8 +160,8 @@ def zte(ip, username="", passwd=""):
             print child.before
             temp = child.before.split('\r\n')
             slots = [x.split()[2] for x in temp if x.startswith('1')
-                     and x.find('GTGO') >= 0
-                     and x.find('INSERVICE') >= 0]
+                    and x.find('GTGO') >= 0
+                    and x.find('INSERVICE') >= 0]
             if slots:
                 mark, records = zte_gpon(child, slots)
             else:
@@ -203,7 +203,7 @@ def huawei(ip, username, passwd):
     child.sendline(passwd)
 
     index = child.expect([">", "---- More.*----",
-                          pexpect.EOF, pexpect.TIMEOUT])
+        pexpect.EOF, pexpect.TIMEOUT])
     if index < 2:
         if index == 1:
             child.send(" ")
@@ -217,7 +217,7 @@ def huawei(ip, username, passwd):
         child.sendline("")
         while True:
             index = child.expect(["---- More.*----", "#",
-                                  pexpect.EOF, pexpect.TIMEOUT])
+                pexpect.EOF, pexpect.TIMEOUT])
             if index == 0:
                 result += child.before
                 child.send(" ")
@@ -241,7 +241,7 @@ def huawei(ip, username, passwd):
     if mark == "success":
         result = result.split('\r\n')
         result = [x.replace("\x1b[37D", "").strip() for x in result
-                  if "QinQ" in x]
+                if "QinQ" in x]
         for x in result:
             x = x.split()
             svlan = x[1]
