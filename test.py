@@ -22,7 +22,7 @@ def svlan(olts_file, result_file):
             olt1 = olt.strip('\n')
             print olt1
             olt = olt1.split(',')
-            if olt[1].low() == "zte":
+            if olt[1].lower() == "zte":
                 mark, records = zte(olt[0], "", "")
             elif olt[1].lower() == "hw":
                 mark, records = huawei(olt[0], "", "")
@@ -159,8 +159,10 @@ def zte(ip, username="", passwd=""):
         if index == 0:
             child.sendline("show card")
             child.expect("show card")
-            child.expect("#")
+            index = child.expect(["--More--", "#", pexpect.EOF, pexpect.TIMEOUT])
             print child.before
+            if index==0:
+                child.send(' ')
             temp = child.before.split('\r\n')
             slots = [x.split()[2] for x in temp if x.startswith('1')
                      and x.find('GTGO') >= 0
