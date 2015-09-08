@@ -19,7 +19,9 @@ def svlan(olts_file, result_file):
             mark = "fail"
             records = {}
 
+            print olt
             olt = olt.split(',')
+            olt[1] = olt[1].strip('\n')
             if olt[1] == "zte":
                 mark, records = zte(olt[0], "", "")
             else:
@@ -27,12 +29,12 @@ def svlan(olts_file, result_file):
 
             fout.write("%s: %s\n" % (olt[0], mark))
             if mark == "success":
-                for svlan, ports in records:
+                for svlan, ports in records.items():
                     if len(ports) > 1:
-                        fout.write("%s %s\n" % (' ' * 4, svlan))
+                        fout.write("%s svlan:%s\n" % (' ' * 4, svlan))
                         for port in ports:
                             fout.write("%s\n" % port)
-            fout.write("%s\n" % '*' * 50)
+            fout.write("%s\n\n" % ('*' * 500))
 
 
 def clear_zte_gpon(result, records):
@@ -53,7 +55,8 @@ def clear_zte_gpon(result, records):
             continue
         if 'YES' in x:
             svlan = re.split('\s+', x)[1]
-            records.setdefault(svlan, set()).add(port)
+            if svlan.isdigit():
+                records.setdefault(svlan, set()).add(port)
             continue
     return records
 
