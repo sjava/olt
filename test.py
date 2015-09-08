@@ -18,21 +18,22 @@ def svlan(olts_file, result_file):
             mark = "fail"
             records = {}
 
-            print olt
-            olt = olt.strip('\n').split(',')
+            olt1=olt.strip('\n')
+            print olt1
+            olt = olt1.split(',')
             if olt[1] == "zte":
-                mark, records = zte(olt[0], "zte", "zteqsc")
+                mark, records = zte(olt[0], "", "")
             else:
-                mark, records = huawei(olt[0], "root", "hwswzx!@#456")
+                mark, records = huawei(olt[0], "", "")
 
-            fout.write("%s: %s\n" % (olt[0], mark))
+            fout.write("%s: %s\n" % (olt1, mark))
             if mark == "success":
                 for svlan, ports in records.items():
                     if len(ports) > 1:
-                        fout.write("%s %s\n" % (' ' * 4, svlan))
+                        fout.write("%s svlan:%s\n" % (' ' * 2, svlan))
                         for port in ports:
-                            fout.write("%s\n" % port)
-            fout.write("%s\n" % ('*' * 50))
+                            fout.write("%s %s\n" % (' '*4,port))
+            fout.write("%s\n\n" % ('*' * 50))
 
 
 def clear_zte_gpon(result, records):
@@ -53,7 +54,8 @@ def clear_zte_gpon(result, records):
             continue
         if 'YES' in x:
             svlan = re.split('\s+', x)[1]
-            records.setdefault(svlan, set()).add(port)
+            if svlan.isdigit():
+                records.setdefault(svlan, set()).add(port)
             continue
     return records
 
@@ -245,7 +247,10 @@ def huawei(ip, username, passwd):
         for x in result:
             x = x.split()
             svlan = x[1]
-            port = x[3] + '_' + x[4] + x[5]
+            if x[4].count('/')==2:
+                port = x[3] + '_' + x[4]
+            else:
+                port = x[3] + '_' + x[4] + x[5]
             records.setdefault(svlan, set()).add(port)
 
     return mark, records
