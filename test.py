@@ -178,7 +178,7 @@ def zte(ip, username="", passwd=""):
     return mark, records
 
 
-def huawei(ip, username, passwd):
+def huawei(ip, username='', passwd=''):
     """TODO: Docstring for huawei.
 
     :ip: TODO
@@ -257,3 +257,54 @@ def huawei(ip, username, passwd):
             records.setdefault(svlan, set()).add(port)
 
     return mark, records
+
+
+def port_check(olt, mark, records, fail='result/fail.log', result='result/olt.txt'):
+    if mark == 'fail':
+        with open(fail, 'a') as ffail:
+            ffail.write('%s: %s\n' % (olt, mark))
+        return
+    with open(result, 'a') as fresult:
+        fresult.write('%s:\n' % olt)
+        for svlan, ports in records.items():
+            if len(ports) > 1:
+                fresult.write('%s svlan %s:\n' % (' ' * 4, svlan))
+                for port in ports:
+                    fresult.write('%s%s\n' % (' ' * 10, port))
+        fresult.write('%s\n' % ('-' * 50))
+
+
+def olt_check(sip, svlan_olt, result='result/sw.txt'):
+    if svlan_olt:
+        with open(result, 'a') as fresult:
+            fresult.write('%s:\n' % sip)
+            for svlan, olts in svlan_olt.items():
+                if len(olts) > 1:
+                    fresult.write('%s svlan:%s\n' % (' ' * 4, svlan))
+                    for olt in olts:
+                        fresult.write('%s%s\n' % (' ' * 10, olt))
+            fresult.write('%s\n' % ('-' * 50))
+
+
+with open('sw.txt') as devices:
+    sw = {}
+    for device in devices:
+        sip, olt = device.split(',', 1)
+        olt = olt.strip()
+        sip = sip.strip()
+        sw.setdefault(sip, set()).add(olt)
+for k, v in sw.items():
+    svlan_olt = {}
+    for i in v:
+        mark = "fail"
+        records = {}
+        olt_ip, factory, area = i.split(',')
+        if factory.lower() == 'zte':
+            mark, records = zte(olt_ip)
+        elif factory.lower() == 'hw':
+            mark, records = huawei(olt_ip)
+        port_check(i, mark, records)
+        if mark == 'success':
+            for svlan in records.keys():
+                svlan_olt.setdefault(svlan, set()).add(i)
+    olt_check(k, svlan_olt)
