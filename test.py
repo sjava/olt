@@ -6,7 +6,7 @@ from itertools import groupby
 from operator import itemgetter
 
 
-def svlan(olts_file, result_file):
+def port_svlan(olts_file, result_file):
     """TODO: Docstring for svlan.
 
     :olts_file: TODO
@@ -14,27 +14,20 @@ def svlan(olts_file, result_file):
     :returns: TODO
 
     """
-    with open(olts_file) as olts, open(result_file, 'w') as fout:
+    with open(olts_file) as olts:
         for olt in olts:
             mark = "fail"
             records = {}
 
-            olt1 = olt.strip('\n')
-            print olt1
-            olt = olt1.split(',')
-            if olt[1].lower() == "zte":
-                mark, records = zte(olt[0], "", "")
-            elif olt[1].lower() == "hw":
-                mark, records = huawei(olt[0], "", "")
+            olt = olt.strip('\n')
+            print olt
+            ip, factory, area = [x.strip() for x in olt.split()]
+            if factory.lower() == "zte":
+                mark, records = zte(ip)
+            elif factory.lower() == "hw":
+                mark, records = huawei(ip)
 
-            fout.write("%s: %s\n" % (olt1, mark))
-            if mark == "success":
-                for svlan, ports in records.items():
-                    if len(ports) > 1:
-                        fout.write("%s svlan:%s\n" % (' ' * 2, svlan))
-                        for port in ports:
-                            fout.write("%s %s\n" % (' ' * 4, port))
-            fout.write("%s\n\n" % ('*' * 50))
+            port_check(olt, mark, records, result=result_file)
 
 
 def clear_zte_gpon(result, records):
@@ -165,8 +158,8 @@ def zte(ip, username="", passwd=""):
             if index == 0:
                 child.send(' ')
             slots = [x.split()[2] for x in temp if x.startswith('1')
-                    and x.find('GTGO') >= 0
-                    and x.find('INSERVICE') >= 0]
+                     and x.find('GTGO') >= 0
+                     and x.find('INSERVICE') >= 0]
             if slots:
                 mark, records = zte_gpon(child, slots)
             else:
@@ -208,7 +201,7 @@ def huawei(ip, username='', passwd=''):
     child.sendline(passwd)
 
     index = child.expect([">", "---- More.*----",
-        pexpect.EOF, pexpect.TIMEOUT])
+                          pexpect.EOF, pexpect.TIMEOUT])
     if index < 2:
         if index == 1:
             child.send(" ")
@@ -222,7 +215,7 @@ def huawei(ip, username='', passwd=''):
         child.sendline("")
         while True:
             index = child.expect(["---- More.*----", "#",
-                pexpect.EOF, pexpect.TIMEOUT])
+                                  pexpect.EOF, pexpect.TIMEOUT])
             if index == 0:
                 result += child.before
                 child.send(" ")
@@ -246,7 +239,7 @@ def huawei(ip, username='', passwd=''):
     if mark == "success":
         result = result.split('\r\n')
         result = [x.replace("\x1b[37D", "").strip() for x in result
-                if "QinQ" in x]
+                  if "QinQ" in x]
         for x in result:
             x = x.split()
             svlan = x[1]
@@ -289,16 +282,18 @@ def olt_check(sip, svlan_olt, result='result/sw.txt'):
 with open('sw.txt') as devices:
     sw = {}
     for device in devices:
-        sip, olt = device.split(',', 1)
-        olt = olt.strip()
-        sip = sip.strip()
+        sip, olt = [x.strip() for x in device.split(',', 1)]
+        #  sip, olt = device.split(',', 1)
+        #  olt = olt.strip()
+        #  sip = sip.strip()
         sw.setdefault(sip, set()).add(olt)
 for k, v in sw.items():
     svlan_olt = {}
     for i in v:
         mark = "fail"
         records = {}
-        olt_ip, factory, area = i.split(',')
+        olt_ip, factory, area = [x.strip() for x in i.split(',')]
+        #  olt_ip, factory, area = i.split(',')
         if factory.lower() == 'zte':
             mark, records = zte(olt_ip)
         elif factory.lower() == 'hw':
