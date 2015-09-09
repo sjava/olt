@@ -23,9 +23,9 @@ def svlan(olts_file, result_file):
             print olt1
             olt = olt1.split(',')
             if olt[1].lower() == "zte":
-                mark, records = zte(olt[0], "zte", "zteqsc")
+                mark, records = zte(olt[0], "", "")
             elif olt[1].lower() == "hw":
-                mark, records = huawei(olt[0], "root", "hwswzx!@#456")
+                mark, records = huawei(olt[0], "", "")
 
             fout.write("%s: %s\n" % (olt1, mark))
             if mark == "success":
@@ -132,7 +132,7 @@ def zte_epon(child):
     return mark, records
 
 
-def zte(ip, username="zte", passwd="zteqsc"):
+def zte(ip, username="", passwd=""):
     """TODO: Docstring for zte.
 
     :ip: TODO
@@ -178,7 +178,7 @@ def zte(ip, username="zte", passwd="zteqsc"):
     return mark, records
 
 
-def huawei(ip, username='root', passwd='hwswzx!@#456'):
+def huawei(ip, username='', passwd=''):
     """TODO: Docstring for huawei.
 
     :ip: TODO
