@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 import pexpect
 import re
-from itertools import groupby
-from operator import itemgetter
+import os
 
 
-def port_svlan(olts_file, result_file):
+def olt_svlan_check(olts_file='olt_test.txt', fail_file='result/fail.log',
+                    result_file='result/olt.txt'):
     """TODO: Docstring for svlan.
 
     :olts_file: TODO
@@ -14,6 +14,11 @@ def port_svlan(olts_file, result_file):
     :returns: TODO
 
     """
+    for f in [fail_file, result_file]:
+        if os.path.exists(f):
+            os.remove(f)
+        os.mknod(f)
+
     with open(olts_file) as olts:
         for olt in olts:
             mark = "fail"
@@ -21,13 +26,14 @@ def port_svlan(olts_file, result_file):
 
             olt = olt.strip('\n')
             print olt
-            ip, factory, area = [x.strip() for x in olt.split()]
+            ip, factory, area = [x.strip() for x in olt.split(',')]
             if factory.lower() == "zte":
                 mark, records = zte(ip)
             elif factory.lower() == "hw":
                 mark, records = huawei(ip)
 
-            port_check(olt, mark, records, result=result_file)
+            olt_check_out(olt, mark, records,
+                          result_file=result_file, fail_file=fail_file)
 
 
 def clear_zte_gpon(result, records):
@@ -125,7 +131,7 @@ def zte_epon(child):
     return mark, records
 
 
-def zte(ip, username="", passwd=""):
+def zte(ip, username="zte", passwd="zteqsc"):
     """TODO: Docstring for zte.
 
     :ip: TODO
@@ -171,7 +177,7 @@ def zte(ip, username="", passwd=""):
     return mark, records
 
 
-def huawei(ip, username='', passwd=''):
+def huawei(ip, username='root', passwd='hwswzx!@#456'):
     """TODO: Docstring for huawei.
 
     :ip: TODO
@@ -252,12 +258,12 @@ def huawei(ip, username='', passwd=''):
     return mark, records
 
 
-def port_check(olt, mark, records, fail='result/fail.log', result='result/olt.txt'):
+def olt_check_out(olt, mark, records, fail_file, result_file):
     if mark == 'fail':
-        with open(fail, 'a') as ffail:
+        with open(fail_file, 'a') as ffail:
             ffail.write('%s: %s\n' % (olt, mark))
         return
-    with open(result, 'a') as fresult:
+    with open(result_file, 'a') as fresult:
         fresult.write('%s:\n' % olt)
         for svlan, ports in records.items():
             if len(ports) > 1:
@@ -267,9 +273,9 @@ def port_check(olt, mark, records, fail='result/fail.log', result='result/olt.tx
         fresult.write('%s\n' % ('-' * 50))
 
 
-def olt_check(sip, svlan_olt, result='result/sw.txt'):
+def sw_check_out(sip, svlan_olt, result_file):
     if svlan_olt:
-        with open(result, 'a') as fresult:
+        with open(result_file, 'a') as fresult:
             fresult.write('%s:\n' % sip)
             for svlan, olts in svlan_olt.items():
                 if len(olts) > 1:
@@ -279,27 +285,32 @@ def olt_check(sip, svlan_olt, result='result/sw.txt'):
             fresult.write('%s\n' % ('-' * 50))
 
 
-with open('sw.txt') as devices:
-    sw = {}
-    for device in devices:
-        sip, olt = [x.strip() for x in device.split(',', 1)]
-        #  sip, olt = device.split(',', 1)
-        #  olt = olt.strip()
-        #  sip = sip.strip()
-        sw.setdefault(sip, set()).add(olt)
-for k, v in sw.items():
-    svlan_olt = {}
-    for i in v:
-        mark = "fail"
-        records = {}
-        olt_ip, factory, area = [x.strip() for x in i.split(',')]
-        #  olt_ip, factory, area = i.split(',')
-        if factory.lower() == 'zte':
-            mark, records = zte(olt_ip)
-        elif factory.lower() == 'hw':
-            mark, records = huawei(olt_ip)
-        port_check(i, mark, records)
-        if mark == 'success':
-            for svlan in records.keys():
-                svlan_olt.setdefault(svlan, set()).add(i)
-    olt_check(k, svlan_olt)
+def sw_svlan_check(sw_file='sw_test.txt', olt_result_file='result/olt.txt',
+                   sw_result_file='result/sw.txt', fail_file='result/fail.log'):
+
+    for f in [fail_file, olt_result_file, sw_result_file]:
+        if os.path.exists(f):
+            os.remove(f)
+        os.mknod(f)
+
+    with open(sw_file) as devices:
+        sw = {}
+        for device in devices:
+            sip, olt = [x.strip() for x in device.split(',', 1)]
+            sw.setdefault(sip, set()).add(olt)
+    for k, v in sw.items():
+        svlan_olt = {}
+        for i in v:
+            mark = "fail"
+            records = {}
+            olt_ip, factory, area = [x.strip() for x in i.split(',')]
+            if factory.lower() == 'zte':
+                mark, records = zte(olt_ip)
+            elif factory.lower() == 'hw':
+                mark, records = huawei(olt_ip)
+            olt_check_out(i, mark, records,
+                          fail_file=fail_file, result_file=olt_result_file)
+            if mark == 'success':
+                for svlan in records.keys():
+                    svlan_olt.setdefault(svlan, set()).add(i)
+        sw_check_out(k, svlan_olt, result_file=sw_result_file)
