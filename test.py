@@ -131,7 +131,7 @@ def zte_epon(child):
     return mark, records
 
 
-def zte(ip, username="zte", passwd="zteqsc"):
+def zte(ip, username="", passwd=""):
     """TODO: Docstring for zte.
 
     :ip: TODO
@@ -177,7 +177,7 @@ def zte(ip, username="zte", passwd="zteqsc"):
     return mark, records
 
 
-def huawei(ip, username='root', passwd='hwswzx!@#456'):
+def huawei(ip, username='', passwd=''):
     """TODO: Docstring for huawei.
 
     :ip: TODO
