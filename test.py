@@ -132,93 +132,64 @@ def zte_epon(child):
 
 
 def zte(ip, username="", passwd=""):
-    """TODO: Docstring for zte.
-
-    :ip: TODO
-    :username: TODO
-    :passwd: TODO
-    :filename: TODO
-    :returns: TODO
-
-    """
     mark = "fail"
     records = {}
 
     child = pexpect.spawn("telnet %s" % ip)
-
     fout = file('1.log', 'w')
     child.logfile = fout
 
-    index = child.expect(["[uU]sername:", pexpect.EOF, pexpect.TIMEOUT])
-    if index == 0:
+    try:
+        child.expect("[uU]sername:")
         child.sendline(username)
-        index = child.expect(["[pP]assword:", pexpect.EOF, pexpect.TIMEOUT])
+        child.expect("[pP]assword:")
         child.sendline(passwd)
-        index = child.expect([".*#", pexpect.EOF, pexpect.TIMEOUT])
+        child.expect(".*#")
+        child.sendline("show card")
+        child.expect("show card")
+        index = child.expect(["--More--", "#"])
+        print child.before
+        temp = child.before.split('\r\n')
         if index == 0:
-            child.sendline("show card")
-            child.expect("show card")
-            index = child.expect(["--More--", "#", pexpect.EOF, pexpect.TIMEOUT])
-            print child.before
-            temp = child.before.split('\r\n')
-            if index == 0:
-                child.send(' ')
-            slots = [x.split()[2] for x in temp if x.startswith('1')
-                     and x.find('GTGO') >= 0
-                     and x.find('INSERVICE') >= 0]
-            if slots:
-                mark, records = zte_gpon(child, slots)
-            else:
-                mark, records = zte_epon(child)
+            child.send(' ')
+        slots = [x.split()[2] for x in temp if x.startswith('1')
+                 and x.find('GTGO') >= 0
+                 and x.find('INSERVICE') >= 0]
+        if slots:
+            mark, records = zte_gpon(child, slots)
         else:
-            child.close(force=True)
-    else:
+            mark, records = zte_epon(child)
+    except (pexpect.EOF, pexpect.TIMEOUT):
+        print "try one exception"
+        mark = 'fail'
         child.close(force=True)
     return mark, records
 
 
 def huawei(ip, username='', passwd=''):
-    """TODO: Docstring for huawei.
-
-    :ip: TODO
-    :username: TODO
-    :passwd: TODO
-    :returns: TODO
-
-    """
     mark = "fail"
     result = ""
     records = {}
 
     child = pexpect.spawn("telnet %s" % ip)
-
     fout = file("1.log", "w")
     child.logfile = fout
-
-    index = child.expect(["User name:", pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
-        child.close(force=True)
-        return mark, records
-    child.sendline(username)
-    index = child.expect(["User password:", pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
-        child.close(force=True)
-        return mark, records
-    child.sendline(passwd)
-
-    index = child.expect([">", "---- More.*----",
-                          pexpect.EOF, pexpect.TIMEOUT])
-    if index < 2:
+    try:
+        child.expect("User name:")
+        child.sendline(username)
+        child.expect('User password:')
+        child.sendline(passwd)
+        index = child.expect(['>', '---- More.*----'])
         if index == 1:
-            child.send(" ")
-            child.expect(">")
-        child.sendline("enable")
-        child.expect(["#"])
-        child.sendline("undo terminal monitor")
-        child.expect(["#"])
-        child.sendline("disp service-port all")
-        child.expect(["}:"])
-        child.sendline("")
+            child.send(' ')
+            child.expect('>')
+        child.sendline('enable')
+        child.expect('#')
+        child.sendline('undo terminal monitor')
+        child.expect('#')
+        child.sendline('disp service-port all')
+        child.expect('}:')
+        child.sendline('')
         while True:
             index = child.expect(["---- More.*----", "#",
                                   pexpect.EOF, pexpect.TIMEOUT])
@@ -238,8 +209,9 @@ def huawei(ip, username='', passwd=''):
                 mark = "fail"
                 child.close(force=True)
                 break
-    else:
-        mark = "fail"
+    except (pexpect.EOF, pexpect.TIMEOUT):
+        mark = 'fail'
+        print "try one expetion"
         child.close(force=True)
 
     if mark == "success":
