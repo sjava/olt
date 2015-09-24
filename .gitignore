@@ -4,3 +4,6 @@
 *.egg-info
 *.swp
 *.log
+*.txt
+*.csv
+*.*~
