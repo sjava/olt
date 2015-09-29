@@ -34,6 +34,27 @@ def telnet_s93(ip, username=username, passwd=passwd, super_passwd=super_passwd):
         child.close(force=True)
         return None
     child.sendline(super_passwd)
+    child.expect('>')
+    child.sendline('sys')
+    child.expect(']')
+
+    result = []
+    child.sendline('disp cu interface Eth-Trunk')
+    while True:
+        index = child.expect([']', '---- More ----', pexpect.EOF, pexpect.TIMEOUT])
+        if index == 0:
+            result.append(child.before)
+            child.sendline('quit')
+            child.sendline('quit')
+            child.close()
+            return result
+        elif index == 1:
+            result.append(child.before)
+            child.send(' ')
+        else:
+            child.close(force=True)
+            return None
+    return result
 
 
 def main():
