@@ -199,13 +199,21 @@ def test():
     with open('switch.csv', 'rb') as fp:
         reader = csv.reader(fp)
         for area, ip, name, model in reader:
-            mark, reslult = functions[model.strip().lower()](ip.strip())
-            if mark == 'fail':
-                print('{0},{1},{2},{3}:fail'.format(area, ip, name, model))
+            try:
+                mark, reslult = functions[model.strip().lower()](ip.strip())
+            except KeyError as e:
+                with open('fail.txt', 'a') as flog:
+                    flog.write('{0},{1},{2},{3}:model fail\n'.format(area, ip, name, model))
             else:
-                print('{0},{1},{2},{3}:'.format(area, ip, name, model))
-                for i in reslult:
-                    print i
+                if mark == 'fail':
+                    with open('fail.txt', 'a') as flog:
+                        flog.write('{0},{1},{2},{3}:fail\n'.format(area, ip, name, model))
+                else:
+                    with open('success.txt', 'a') as fsuccess:
+                        fsuccess.write('{0},{1},{2},{3}:\n'.format(area, ip, name, model))
+                        for i in reslult:
+                            fsuccess.write(i + '\n\n')
+                        fsuccess.write('-' * 80 + '\n')
 
 
 def main():
