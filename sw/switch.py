@@ -39,7 +39,7 @@ def telnet_s85(ip, username=username, passwd=passwd, super_passwd=super_passwd):
     child.expect(']')
 
     result = []
-    child.sendline('disp cu | in link-aggregation group')
+    child.sendline('disp cu | in link-aggregation group .* mode')
     while True:
         index = child.expect([']', '---- More ----', pexpect.EOF,
                               pexpect.TIMEOUT])
@@ -122,6 +122,25 @@ def s93(ip):
         result = result.split('#')
         result = result[1:-1]
         result = [x for x in result if 'mode lacp-static' not in x]
+        return 'success', result
+
+
+def s85(ip):
+    """TODO: Docstring for s93.
+
+    :ip: TODO
+    :returns: TODO
+
+    """
+    result = telnet_s85(ip)
+    if result is None:
+        return 'fail', result
+    else:
+        result = ''.join(result)
+        result = result.replace('\x1b[42D', '')
+        result = result.split('\r\n')
+        result = result[1:-1]
+        result = [x for x in result if 'mode manual' in x]
         return 'success', result
 
 
