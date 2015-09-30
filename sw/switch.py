@@ -10,7 +10,7 @@ passwd = config.get('switch', 'passwd')
 super_passwd = config.get('switch', 'super_passwd')
 
 
-def telnet_s89(ip, username=username, passwd=passwd, super_passwd=super_passwd):
+def telnet_s89t64g(ip, username=username, passwd=passwd, super_passwd=super_passwd):
     child = pexpect.spawn('telnet {0}'.format(ip))
     fout = file('out.log', 'w')
     child.logfile = fout
@@ -151,12 +151,6 @@ def telnet_s93(ip, username=username, passwd=passwd, super_passwd=super_passwd):
 
 
 def s93(ip):
-    """TODO: Docstring for s93.
-
-    :ip: TODO
-    :returns: TODO
-
-    """
     result = telnet_s93(ip)
     if result is None:
         return 'fail', result
@@ -165,17 +159,11 @@ def s93(ip):
         result = result.replace('\x1b[42D', '')
         result = result.split('#')
         result = result[1:-1]
-        result = [x for x in result if 'mode lacp-static' not in x]
+        result = [x.strip() for x in result if 'mode lacp-static' not in x]
         return 'success', result
 
 
 def s85(ip):
-    """TODO: Docstring for s93.
-
-    :ip: TODO
-    :returns: TODO
-
-    """
     result = telnet_s85(ip)
     if result is None:
         return 'fail', result
@@ -185,6 +173,19 @@ def s85(ip):
         result = result.split('\r\n')
         result = result[1:-1]
         result = [x for x in result if 'mode manual' in x]
+        return 'success', result
+
+
+def s89t64g(ip):
+    result = telnet_s89t64g(ip)
+    if result is None:
+        return 'fail', result
+    else:
+        result = ''.join(result).split('\r\n')
+        result = result[1:-1]
+        result = [x.strip(' \x08') for x in result]
+        result = set(result)
+        result = [x for x in result if 'mode on' in x]
         return 'success', result
 
 
