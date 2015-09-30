@@ -58,6 +58,25 @@ def telnet_s93(ip, username=username, passwd=passwd, super_passwd=super_passwd):
     return result
 
 
+def s93(ip):
+    """TODO: Docstring for s93.
+
+    :ip: TODO
+    :returns: TODO
+
+    """
+    result = telnet_s93(ip)
+    if result is None:
+        return 'fail', result
+    else:
+        result = ''.join(result)
+        result = result.replace('\x1b[42D', '')
+        result = result.split('#')
+        result = result[1:-1]
+        result = [x for x in result if 'mode lacp-static' not in x]
+        return 'success', result
+
+
 def main():
     pass
 
