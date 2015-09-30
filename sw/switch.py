@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import ConfigParser
 import pexpect
+import csv
 
 config = ConfigParser.ConfigParser()
 config.read('config.ini')
@@ -187,6 +188,24 @@ def s89t64g(ip):
         result = set(result)
         result = [x for x in result if 'mode on' in x]
         return 'success', result
+
+
+def test():
+    functions = dict(s8505=s85,
+                     s8508=s85,
+                     s9306=s93,
+                     s8905=s89t64g,
+                     t64g=s89t64g)
+    with open('switch.csv', 'rb') as fp:
+        reader = csv.reader(fp)
+        for area, ip, name, model in reader:
+            mark, reslult = functions[model.strip().lower()](ip.strip())
+            if mark == 'fail':
+                print('{0},{1},{2},{3}:fail'.format(area, ip, name, model))
+            else:
+                print('{0},{1},{2},{3}:'.format(area, ip, name, model))
+                for i in reslult:
+                    print i
 
 
 def main():
