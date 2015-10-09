@@ -17,26 +17,18 @@ def telnet_s89t64g(ip, username=username, passwd=passwd, super_passwd=super_pass
         fout = file('out.log', 'w')
         child.logfile = fout
 
-        index = child.expect(['Username:', pexpect.EOF, pexpect.TIMEOUT])
-        if index != 0:
-            child.close(force=True)
-            return None
-
+        child.expect('Username:')
         child.sendline(username)
-        index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-        if index != 0:
-            child.close(force=True)
-            return None
 
+        child.expect('Password:')
         child.sendline(passwd)
-        child.expect('>')
-        child.sendline('enable')
-        index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-        if index != 0:
-            child.close(force=True)
-            return None
-        child.sendline(super_passwd)
-        child.expect('#')
+        index = child.expect(['>', '#'])
+        if index == 0:
+            child.sendline('enable')
+            index = child.expect('Password:')
+            child.sendline(super_passwd)
+            child.expect('#')
+
         result = []
         child.sendline('show run | in smartgroup [0-9]+ mode')
         while True:
@@ -49,6 +41,7 @@ def telnet_s89t64g(ip, username=username, passwd=passwd, super_passwd=super_pass
             elif index == 1:
                 result.append(child.before)
                 child.send(' ')
+                continue
             else:
                 child.close(force=True)
                 return None
@@ -64,24 +57,14 @@ def telnet_s85(ip, username=username, passwd=passwd, super_passwd=super_passwd):
         fout = file('out.log', 'w')
         child.logfile = fout
 
-        index = child.expect(['Username:', pexpect.EOF, pexpect.TIMEOUT])
-        if index != 0:
-            child.close(force=True)
-            return None
-
+        child.expect('Username:')
         child.sendline(username)
-        index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-        if index != 0:
-            child.close(force=True)
-            return None
 
+        child.expect('Password:')
         child.sendline(passwd)
         child.expect('>')
         child.sendline('super')
-        index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-        if index != 0:
-            child.close(force=True)
-            return None
+        child.expect('Password:')
         child.sendline(super_passwd)
         child.expect('>')
         child.sendline('sys')
@@ -101,6 +84,7 @@ def telnet_s85(ip, username=username, passwd=passwd, super_passwd=super_passwd):
             elif index == 1:
                 result.append(child.before)
                 child.send(' ')
+                continue
             else:
                 child.close(force=True)
                 return None
@@ -116,30 +100,20 @@ def telnet_s93(ip, username=username, passwd=passwd, super_passwd=super_passwd):
         fout = file('out.log', 'w')
         child.logfile = fout
 
-        index = child.expect(['Username:', pexpect.EOF, pexpect.TIMEOUT])
-        if index != 0:
-            child.close(force=True)
-            return None
-
+        child.expect('Username:')
         child.sendline(username)
-        index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-        if index != 0:
-            child.close(force=True)
-            return None
 
+        child.expect('Password:')
         child.sendline(passwd)
         child.expect('>')
         child.sendline('super')
-        index = child.expect(['Password:', '>', pexpect.EOF, pexpect.TIMEOUT])
+        index = child.expect(['Password:', '>'])
         if index == 0:
             child.sendline(super_passwd)
             child.expect('>')
             child.sendline('sys')
-        elif index == 1:
-            child.sendline('sys')
         else:
-            child.close(force=True)
-            return None
+            child.sendline('sys')
         child.expect(']')
 
         result = []
@@ -156,6 +130,7 @@ def telnet_s93(ip, username=username, passwd=passwd, super_passwd=super_passwd):
             elif index == 1:
                 result.append(child.before)
                 child.send(' ')
+                continue
             else:
                 child.close(force=True)
                 return None
