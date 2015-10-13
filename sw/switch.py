@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import ConfigParser
 import pexpect
+import csv
 
 config = ConfigParser.ConfigParser()
 config.read('config.ini')
