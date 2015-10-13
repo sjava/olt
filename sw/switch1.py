@@ -88,33 +88,30 @@ def telnet_s93(ip, username=username, passwd=passwd, super_passwd=super_passwd):
         return child
 
 
-def s93(ip):
+def s93_lacp_check(ip):
     child = telnet_s93(ip)
     if child is None:
         return 'fail', None
 
     result = []
-    try:
-        child.sendline('disp cu interface Eth-Trunk')
-        while True:
-            index = child.expect([']', '---- More ----', pexpect.EOF,
-                                  pexpect.TIMEOUT],
-                                 timeout=120)
-            if index == 0:
-                result.append(child.before)
-                child.sendline('quit')
-                child.sendline('quit')
-                child.close()
-                break
-            elif index == 1:
-                result.append(child.before)
-                child.send(' ')
-                continue
-            else:
-                child.close(force=True)
-                return 'fail', None
-    except (pexpect.EOF, pexpect.TIMEOUT):
-        return 'fail', None
+    child.sendline('disp cu interface Eth-Trunk')
+    while True:
+        index = child.expect([']', '---- More ----', pexpect.EOF,
+                              pexpect.TIMEOUT],
+                             timeout=120)
+        if index == 0:
+            result.append(child.before)
+            child.sendline('quit')
+            child.sendline('quit')
+            child.close()
+            break
+        elif index == 1:
+            result.append(child.before)
+            child.send(' ')
+            continue
+        else:
+            child.close(force=True)
+            return 'fail', None
 
     result = ''.join(result)
     result = result.replace('\x1b[42D', '')
@@ -124,52 +121,90 @@ def s93(ip):
     return 'success', result
 
 
-def s85(ip):
-    result = telnet_s85(ip)
-    if result is None:
-        return 'fail', result
-    else:
-        result = ''.join(result)
-        result = result.replace('\x1b[42D', '')
-        result = result.split('\r\n')
-        result = result[1:-1]
-        result = [x for x in result if 'mode manual' in x]
-        return 'success', result
+def s85_lacp_check(ip):
+    child = telnet_s85(ip)
+    if child is None:
+        return 'fail', None
+
+    result = []
+    child.sendline('disp cu | in link-aggregation group .* mode')
+    while True:
+        index = child.expect([']', '---- More ----', pexpect.EOF,
+                              pexpect.TIMEOUT],
+                             timeout=120)
+        if index == 0:
+            result.append(child.before)
+            child.sendline('quit')
+            child.sendline('quit')
+            child.close()
+            break
+        elif index == 1:
+            result.append(child.before)
+            child.send(' ')
+            continue
+        else:
+            child.close(force=True)
+            return 'fail', None
+
+    result = ''.join(result)
+    result = result.replace('\x1b[42D', '')
+    result = result.split('\r\n')
+    result = result[1:-1]
+    result = [x for x in result if 'mode manual' in x]
+    return 'success', result
 
 
-def s89t64g(ip):
-    result = telnet_s89t64g(ip)
-    if result is None:
-        return 'fail', result
-    else:
-        result = ''.join(result).split('\r\n')
-        result = result[1:-1]
-        result = [x.strip(' \x08') for x in result]
-        result = set(result)
-        result = [x for x in result if 'mode on' in x]
-        return 'success', result
+def s89t64g_lacp_check(ip):
+    child = telnet_s89t64g(ip)
+    if child is None:
+        return 'fail', None
+
+    result = []
+    child.sendline('show run | in smartgroup [0-9]+ mode')
+    while True:
+        index = child.expect(["#", '--More--', pexpect.EOF, pexpect.TIMEOUT],
+                             timeout=120)
+        if index == 0:
+            result.append(child.before)
+            child.sendline('exit')
+            child.close()
+            break
+        elif index == 1:
+            result.append(child.before)
+            child.send(' ')
+            continue
+        else:
+            child.close(force=True)
+            return 'fail', None
+
+    result = ''.join(result).split('\r\n')
+    result = result[1:-1]
+    result = [x.strip(' \x08') for x in result]
+    result = set(result)
+    result = [x for x in result if 'mode on' in x]
+    return 'success', result
 
 
-def test():
-    functions = dict(s8505=s85,
-                     s85=s85,
-                     s8508=s85,
-                     s9306=s93,
-                     s8905=s89t64g,
-                     t64g=s89t64g)
+def sw_lacp_check():
+    functions = dict(s8505=s85_lacp_check,
+                     s85=s85_lacp_check,
+                     s8508=s85_lacp_check,
+                     s9306=s93_lacp_check,
+                     s8905=s89t64g_lacp_check,
+                     t64g=s89t64g_lacp_check)
     with open('switch.csv', 'rb') as fp:
         reader = csv.reader(fp)
         for area, ip, name, model in reader:
             try:
                 mark, reslult = functions[model.strip().lower()](ip.strip())
             except KeyError as e:
-                with open('fail.txt', 'a') as flog:
-                    flog.write('{0},{1},{2},{3}:model fail\n'.format(
+                with open('fail.txt', 'a') as ffail:
+                    ffail.write('{0},{1},{2},{3}:model fail\n'.format(
                         area, ip, name, model))
             else:
                 if mark == 'fail':
-                    with open('fail.txt', 'a') as flog:
-                        flog.write('{0},{1},{2},{3}:fail\n'.format(
+                    with open('fail.txt', 'a') as ffail:
+                        ffail.write('{0},{1},{2},{3}:fail\n'.format(
                             area, ip, name, model))
                 else:
                     with open('success.txt', 'a') as fsuccess:
