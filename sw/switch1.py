@@ -187,11 +187,105 @@ def s89t64g_lacp_check(ip):
 
 def sw_lacp_check():
     functions = dict(s8505=s85_lacp_check,
-                     s85=s85_lacp_check,
                      s8508=s85_lacp_check,
                      s9306=s93_lacp_check,
+                     s9303=s93_lacp_check,
                      s8905=s89t64g_lacp_check,
                      t64g=s89t64g_lacp_check)
+    with open('switch.csv', 'rb') as fp:
+        reader = csv.reader(fp)
+        for area, ip, name, model in reader:
+            try:
+                mark, reslult = functions[model.strip().lower()](ip.strip())
+            except KeyError as e:
+                with open('fail.txt', 'a') as ffail:
+                    ffail.write('{0},{1},{2},{3}:model fail\n'.format(
+                        area, ip, name, model))
+            else:
+                if mark == 'fail':
+                    with open('fail.txt', 'a') as ffail:
+                        ffail.write('{0},{1},{2},{3}:fail\n'.format(
+                            area, ip, name, model))
+                else:
+                    with open('success.txt', 'a') as fsuccess:
+                        fsuccess.write('{0},{1},{2},{3}:\n'.format(
+                            area, ip, name, model))
+                        for i in reslult:
+                            fsuccess.write(i + '\n\n')
+                        fsuccess.write('-' * 80 + '\n')
+
+
+def s89t64g_conf(ip):
+    child = telnet_s89t64g(ip)
+    if child is None:
+        return 'fail', None
+    try:
+        child.sendline('conf t')
+        child.expect('#')
+        child.sendline('enable secret level 15 wangwei2015!)')
+        child.expect('#')
+        child.sendline('exit')
+        child.expect('#')
+        child.sendline('write')
+        child.expect('#')
+        child.sendline('exit')
+        child.close()
+        return 'success', []
+    except (pexpect.EOF, pexpect.TIMEOUT):
+        child.close(force=True)
+        return 'fail', None
+
+
+def s93_conf(ip):
+    child = telnet_s93(ip)
+    if child is None:
+        return 'fail', None
+    try:
+        child.sendline('super password level 3 cipher wangwei2015!)')
+        child.expect(']')
+        child.sendline('quit')
+        child.expect('>')
+        child.sendline('sa')
+        child.expect('N]:?')
+        child.sendline('y')
+        child.expect('>', timeout=120)
+        child.sendline('quit')
+        child.close()
+        return 'success', []
+    except (pexpect.EOF, pexpect.TIMEOUT):
+        child.close(force=True)
+        return 'fail', None
+
+
+def s85_conf(ip):
+    child = telnet_s85(ip)
+    if child is None:
+        return 'fail', None
+
+    try:
+        child.sendline('super password level 3 cipher wangwei2015!)')
+        child.expect(']')
+        child.sendline('quit')
+        child.expect('>')
+        child.sendline('sa')
+        child.expect('N]')
+        child.sendline('y')
+        child.expect('>', timeout=120)
+        child.sendline('quit')
+        child.close()
+        return 'success', []
+    except (pexpect.EOF, pexpect.TIMEOUT):
+        child.close(force=True)
+        return 'fail', None
+
+
+def sw_conf():
+    functions = dict(s8505=s85_conf,
+                     s8508=s85_conf,
+                     s9306=s93_conf,
+                     s9303=s93_conf,
+                     s8905=s89t64g_conf,
+                     t64g=s89t64g_conf)
     with open('switch.csv', 'rb') as fp:
         reader = csv.reader(fp)
         for area, ip, name, model in reader:
