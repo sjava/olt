@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import ConfigParser
 import pexpect
+import sqlite3
 import sys
 import csv
 
@@ -214,7 +215,148 @@ def sw_lacp_check():
                             fsuccess.write(i + '\n\n')
                         fsuccess.write('-' * 80 + '\n')
 
+####################sw check####################
 
+
+def s93_check(ip, command):
+    child = telnet_s93(ip)
+    if child is None:
+        return 'fail', None
+
+    result = []
+    child.sendline(command)
+    while True:
+        index = child.expect([']', '---- More ----', pexpect.EOF,
+                              pexpect.TIMEOUT],
+                             timeout=120)
+        if index == 0:
+            result.append(child.before)
+            child.sendline('quit')
+            child.expect('>')
+            child.sendline('quit')
+            child.close()
+            break
+        elif index == 1:
+            result.append(child.before)
+            child.send(' ')
+            continue
+        else:
+            child.close(force=True)
+            return 'fail', None
+
+    result = ''.join(result)
+    result = result.replace('\x1b[42D', '')
+    result = result.split('\r\n')[1:-1]
+    result = [x.strip() for x in result]
+    return 'success', result
+
+
+def s85_check(ip, command):
+    child = telnet_s85(ip)
+    if child is None:
+        return 'fail', None
+
+    result = []
+    child.sendline(command)
+    while True:
+        index = child.expect([']', '---- More ----', pexpect.EOF,
+                              pexpect.TIMEOUT],
+                             timeout=120)
+        if index == 0:
+            result.append(child.before)
+            child.sendline('quit')
+            child.expect('>')
+            child.sendline('quit')
+            child.close()
+            break
+        elif index == 1:
+            result.append(child.before)
+            child.send(' ')
+            continue
+        else:
+            child.close(force=True)
+            return 'fail', None
+
+    result = ''.join(result)
+    result = result.replace('\x1b[42D', '')
+    result = result.split('\r\n')[1:-1]
+    result = [x.strip() for x in result]
+    return 'success', result
+
+
+def s89t64g_check(ip, command):
+    child = telnet_s89t64g(ip)
+    if child is None:
+        return 'fail', None
+
+    result = []
+    child.sendline(command)
+    while True:
+        index = child.expect(["#", '--More--', pexpect.EOF, pexpect.TIMEOUT],
+                             timeout=120)
+        if index == 0:
+            result.append(child.before)
+            child.sendline('exit')
+            child.close()
+            break
+        elif index == 1:
+            result.append(child.before)
+            child.send(' ')
+            continue
+        else:
+            child.close(force=True)
+            return 'fail', None
+
+    result = ''.join(result).split('\r\n')[1:-1]
+    result = [x.strip(' \x08') for x in result]
+    return 'success', result
+
+
+def sw_check():
+    functions = dict(s8505=s85_check,
+                     s8508=s85_check,
+                     s9306=s93_check,
+                     s9303=s93_check,
+                     s8905=s89t64g_check,
+                     t64g=s89t64g_check)
+
+    commands = dict(s8505='disp cu interface | in GigabitEthernet',
+                    s8508='disp cu interface | in GigabitEthernet',
+                    s9306='disp cu interface | in GigabitEthernet',
+                    s9303='disp cu interface | in GigabitEthernet',
+                    s8905='show run | in gei_',
+                    t64g='show run | in gei_', )
+
+    with open('switch.csv', 'rb') as fp:
+        reader = csv.reader(fp)
+        for area, ip, name, model in reader:
+            area,ip,name,model=[x.strip() for x in (area,ip,name,model)]
+            try:
+                f = functions[model.strip().lower()]
+                c = commands[model.strip().lower()]
+                mark, reslult = f(ip.strip(), c)
+            except KeyError as e:
+                with open('fail.txt', 'a') as ffail:
+                    ffail.write('{0},{1},{2},{3}:model fail\n'.format(
+                        area, ip, name, model))
+            else:
+                if mark == 'fail':
+                    with open('fail.txt', 'a') as ffail:
+                        ffail.write('{0},{1},{2},{3}:fail\n'.format(
+                            area, ip, name, model))
+                else:
+                    con=sqlite3.connect('sw.db')
+                    with con:
+
+                    # with open('success.txt', 'a') as fsuccess:
+                    #     fsuccess.write('{0},{1},{2},{3}:\n'.format(
+                    #         area, ip, name, model))
+                    #     for i in reslult:
+                    #         fsuccess.write(i + '\n\n')
+                    #     fsuccess.write('-' * 80 + '\n')
+
+
+####################################sw config##################################################
 def s89t64g_conf(ip):
     child = telnet_s89t64g(ip)
     if child is None:
