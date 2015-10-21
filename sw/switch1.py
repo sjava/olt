@@ -247,7 +247,7 @@ def s93_check(ip, command):
     result = ''.join(result)
     result = result.replace('\x1b[42D', '')
     result = result.split('\r\n')[1:-1]
-    result = [x.strip() for x in result]
+    result = [x.strip() for x in result if x.strip() != '']
     return 'success', result
 
 
@@ -320,21 +320,22 @@ def sw_check():
                      s8905=s89t64g_check,
                      t64g=s89t64g_check)
 
-    commands = dict(s8505='disp cu interface | in GigabitEthernet',
-                    s8508='disp cu interface | in GigabitEthernet',
-                    s9306='disp cu interface | in GigabitEthernet',
-                    s9303='disp cu interface | in GigabitEthernet',
-                    s8905='show run | in gei_',
-                    t64g='show run | in gei_', )
+    commands = dict(s8505='disp cu | in ^interface (XG|G)igabitEthernet',
+                    s8508='disp cu | in ^interface (XG|G)igabitEthernet',
+                    s9306='disp cu | in ^interface (XG|G)igabitEthernet',
+                    s9303='disp cu | in ^interface (XG|G)igabitEthernet',
+                    s8905='show run | in interface (xg|g)ei_',
+                    t64g='show run | in interface (xg|g)ei_', )
 
     with open('switch.csv', 'rb') as fp:
         reader = csv.reader(fp)
         for area, ip, name, model in reader:
-            area,ip,name,model=[x.strip() for x in (area,ip,name,model)]
+            area, ip, name, model = [x.strip() for x in (area, ip, name, model)
+                                     ]
             try:
-                f = functions[model.strip().lower()]
-                c = commands[model.strip().lower()]
-                mark, reslult = f(ip.strip(), c)
+                f = functions[model.lower()]
+                c = commands[model.lower()]
+                mark, result = f(ip.strip(), c)
             except KeyError as e:
                 with open('fail.txt', 'a') as ffail:
                     ffail.write('{0},{1},{2},{3}:model fail\n'.format(
@@ -345,8 +346,14 @@ def sw_check():
                         ffail.write('{0},{1},{2},{3}:fail\n'.format(
                             area, ip, name, model))
                 else:
-                    con=sqlite3.connect('sw.db')
+                    con = sqlite3.connect('sw.db')
+                    con.text_factory = str
                     with con:
+                        for i in result:
+                            con.execute(
+                                "insert into interface (area,ip,name,model,interface) values (?,?,?,?,?)",
+                                (area, ip, name, model, i.split()[1]))
+                    con.close()
 
                     # with open('success.txt', 'a') as fsuccess:
                     #     fsuccess.write('{0},{1},{2},{3}:\n'.format(
@@ -356,7 +363,7 @@ def sw_check():
                     #     fsuccess.write('-' * 80 + '\n')
 
 
-####################################sw config##################################################
+                    ####################################sw config##################################################
 def s89t64g_conf(ip):
     child = telnet_s89t64g(ip)
     if child is None:
