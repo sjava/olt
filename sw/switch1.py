@@ -98,8 +98,8 @@ def s93_lacp_check(ip):
     child.sendline('disp cu interface Eth-Trunk')
     while True:
         index = child.expect([']', '---- More ----', pexpect.EOF,
-                              pexpect.TIMEOUT],
-                             timeout=120)
+            pexpect.TIMEOUT],
+            timeout=120)
         if index == 0:
             result.append(child.before)
             child.sendline('quit')
@@ -131,8 +131,8 @@ def s85_lacp_check(ip):
     child.sendline('disp cu | in link-aggregation group .* mode')
     while True:
         index = child.expect([']', '---- More ----', pexpect.EOF,
-                              pexpect.TIMEOUT],
-                             timeout=120)
+            pexpect.TIMEOUT],
+            timeout=120)
         if index == 0:
             result.append(child.before)
             child.sendline('quit')
@@ -164,7 +164,7 @@ def s89t64g_lacp_check(ip):
     child.sendline('show run | in smartgroup [0-9]+ mode')
     while True:
         index = child.expect(["#", '--More--', pexpect.EOF, pexpect.TIMEOUT],
-                             timeout=120)
+                timeout=120)
         if index == 0:
             result.append(child.before)
             child.sendline('exit')
@@ -188,11 +188,11 @@ def s89t64g_lacp_check(ip):
 
 def sw_lacp_check():
     functions = dict(s8505=s85_lacp_check,
-                     s8508=s85_lacp_check,
-                     s9306=s93_lacp_check,
-                     s9303=s93_lacp_check,
-                     s8905=s89t64g_lacp_check,
-                     t64g=s89t64g_lacp_check)
+            s8508=s85_lacp_check,
+            s9306=s93_lacp_check,
+            s9303=s93_lacp_check,
+            s8905=s89t64g_lacp_check,
+            t64g=s89t64g_lacp_check)
     with open('switch.csv', 'rb') as fp:
         reader = csv.reader(fp)
         for area, ip, name, model in reader:
@@ -227,8 +227,8 @@ def s93_check(ip, command):
     child.sendline(command)
     while True:
         index = child.expect([']', '---- More ----', pexpect.EOF,
-                              pexpect.TIMEOUT],
-                             timeout=120)
+            pexpect.TIMEOUT],
+            timeout=120)
         if index == 0:
             result.append(child.before)
             child.sendline('quit')
@@ -260,8 +260,8 @@ def s85_check(ip, command):
     child.sendline(command)
     while True:
         index = child.expect([']', '---- More ----', pexpect.EOF,
-                              pexpect.TIMEOUT],
-                             timeout=120)
+            pexpect.TIMEOUT],
+            timeout=120)
         if index == 0:
             result.append(child.before)
             child.sendline('quit')
@@ -293,7 +293,7 @@ def s89t64g_check(ip, command):
     child.sendline(command)
     while True:
         index = child.expect(["#", '--More--', pexpect.EOF, pexpect.TIMEOUT],
-                             timeout=120)
+                timeout=120)
         if index == 0:
             result.append(child.before)
             child.sendline('exit')
@@ -314,24 +314,24 @@ def s89t64g_check(ip, command):
 
 def sw_check():
     functions = dict(s8505=s85_check,
-                     s8508=s85_check,
-                     s9306=s93_check,
-                     s9303=s93_check,
-                     s8905=s89t64g_check,
-                     t64g=s89t64g_check)
+            s8508=s85_check,
+            s9306=s93_check,
+            s9303=s93_check,
+            s8905=s89t64g_check,
+            t64g=s89t64g_check)
 
     commands = dict(s8505='disp cu | in ^interface (XG|G)igabitEthernet',
-                    s8508='disp cu | in ^interface (XG|G)igabitEthernet',
-                    s9306='disp cu | in ^interface (XG|G)igabitEthernet',
-                    s9303='disp cu | in ^interface (XG|G)igabitEthernet',
-                    s8905='show run | in interface (xg|g)ei_',
-                    t64g='show run | in interface (xg|g)ei_', )
+            s8508='disp cu | in ^interface (XG|G)igabitEthernet',
+            s9306='disp cu | in ^interface (XG|G)igabitEthernet',
+            s9303='disp cu | in ^interface (XG|G)igabitEthernet',
+            s8905='show run | in ^interface (xg|g)ei_',
+            t64g='show run | in ^interface (xg|g)ei_', )
 
     with open('switch.csv', 'rb') as fp:
         reader = csv.reader(fp)
         for area, ip, name, model in reader:
             area, ip, name, model = [x.strip() for x in (area, ip, name, model)
-                                     ]
+                    ]
             try:
                 f = functions[model.lower()]
                 c = commands[model.lower()]
@@ -351,9 +351,9 @@ def sw_check():
                     with con:
                         for i in result:
                             con.execute(
-                                "insert into interface (area,ip,name,model,interface) values (?,?,?,?,?)",
-                                (area, ip, name, model, i.split()[1]))
-                    con.close()
+                                    "insert into interface (area,ip,name,model,interface) values (?,?,?,?,?)",
+                                    (area, ip, name, model, i.split()[1]))
+                            con.close()
 
                     # with open('success.txt', 'a') as fsuccess:
                     #     fsuccess.write('{0},{1},{2},{3}:\n'.format(
@@ -430,11 +430,11 @@ def s85_conf(ip):
 
 def sw_conf():
     functions = dict(s8505=s85_conf,
-                     s8508=s85_conf,
-                     s9306=s93_conf,
-                     s9303=s93_conf,
-                     s8905=s89t64g_conf,
-                     t64g=s89t64g_conf)
+            s8508=s85_conf,
+            s9306=s93_conf,
+            s9303=s93_conf,
+            s8905=s89t64g_conf,
+            t64g=s89t64g_conf)
     with open('switch.csv', 'rb') as fp:
         reader = csv.reader(fp)
         for area, ip, name, model in reader:
