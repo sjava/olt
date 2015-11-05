@@ -14,7 +14,7 @@ hw_olt_username = config.get('olt', 'hw_password')
 
 olts_file, log_file, result_file = ('olts.txt', 'result/olt_log.txt',
                                     'result/olt_info.txt')
-zte_command = "show run | in monitor session"
+zte_command = "show monitor session 1"
 hw_command = ""
 
 
@@ -36,11 +36,18 @@ def olt_check():
             elif factory.lower() == 'hw':
                 pass
             flog.write('{0}:{1}\n'.format(olt.strip(), mark))
-            if mark == 'success' and record != []:
+            record = record_clear(record)
+            if record and mark == 'success':
                 fresult.write('{0}:\n'.format(olt.strip(), ))
                 for r in record:
                     fresult.write('{0}\n'.format(r, ))
                 fresult.write('*' * 60 + '\n')
+
+
+def record_clear(record):
+    if record:
+        record = [x for x in record if 'Session 1' in x]
+    return record
 
 
 def main():

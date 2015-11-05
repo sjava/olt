@@ -37,12 +37,6 @@ def olt_svlan_check(olts_file='olt_test.txt', fail_file='result/fail.log',
 
 
 def clear_zte_gpon(result, records):
-    """TODO: Docstring for clear_zte_gpon.
-
-    :result: TODO
-    :returns: TODO
-
-    """
     result = result.split('\r\n')
     result = [x.strip(' \x08') for x in result]
     result = result[1:-3]

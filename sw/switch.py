@@ -13,143 +13,132 @@ super_passwd = config.get('switch', 'super_passwd')
 
 
 def telnet_s89t64g(ip, username=username, passwd=passwd, super_passwd=super_passwd):
-    child = pexpect.spawn('telnet {0}'.format(ip))
-    fout = file('out.log', 'w')
-    child.logfile = fout
+    try:
+        child = pexpect.spawn('telnet {0}'.format(ip))
+        fout = file('out.log', 'w')
+        child.logfile = fout
 
-    index = child.expect(['Username:', pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
-        child.close(force=True)
-        return None
+        child.expect('Username:')
+        child.sendline(username)
 
-    child.sendline(username)
-    index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
-        child.close(force=True)
-        return None
-
-    child.sendline(passwd)
-    child.expect('>')
-    child.sendline('enable')
-    index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
-        child.close(force=True)
-        return None
-    child.sendline(super_passwd)
-    child.expect('#')
-
-    result = []
-    child.sendline('show run | in smartgroup [0-9]+ mode')
-    while True:
-        index = child.expect(['#', '--More--', pexpect.EOF, pexpect.TIMEOUT])
+        child.expect('Password:')
+        child.sendline(passwd)
+        index = child.expect(['>', '#'])
         if index == 0:
-            result.append(child.before)
-            child.sendline('exit')
-            child.close()
-            return result
-        elif index == 1:
-            result.append(child.before)
-            child.send(' ')
-        else:
-            child.close(force=True)
-            return None
-    return result
+            child.sendline('enable')
+            index = child.expect('Password:')
+            child.sendline(super_passwd)
+            child.expect('#')
+
+        result = []
+        child.sendline('show run | in smartgroup [0-9]+ mode')
+        while True:
+            index = child.expect(["#", '--More--', pexpect.EOF, pexpect.TIMEOUT], timeout=120)
+            if index == 0:
+                result.append(child.before)
+                child.sendline('exit')
+                child.close()
+                return result
+            elif index == 1:
+                result.append(child.before)
+                child.send(' ')
+                continue
+            else:
+                child.close(force=True)
+                return None
+        return result
+    except (pexpect.EOF, pexpect.TIMEOUT):
+        child.close(force=True)
+        return None
 
 
 def telnet_s85(ip, username=username, passwd=passwd, super_passwd=super_passwd):
-    child = pexpect.spawn('telnet {0}'.format(ip))
-    fout = file('out.log', 'w')
-    child.logfile = fout
+    try:
+        child = pexpect.spawn('telnet {0}'.format(ip))
+        fout = file('out.log', 'w')
+        child.logfile = fout
 
-    index = child.expect(['Username:', pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
+        child.expect('Username:')
+        child.sendline(username)
+
+        child.expect('Password:')
+        child.sendline(passwd)
+        child.expect('>')
+        child.sendline('super')
+        child.expect('Password:')
+        child.sendline(super_passwd)
+        child.expect('>')
+        child.sendline('sys')
+        child.expect(']')
+
+        result = []
+        child.sendline('disp cu | in link-aggregation group .* mode')
+        while True:
+            index = child.expect([']', '---- More ----', pexpect.EOF,
+                                  pexpect.TIMEOUT], timeout=120)
+            if index == 0:
+                result.append(child.before)
+                child.sendline('quit')
+                child.sendline('quit')
+                child.close()
+                return result
+            elif index == 1:
+                result.append(child.before)
+                child.send(' ')
+                continue
+            else:
+                child.close(force=True)
+                return None
+        return result
+    except (pexpect.EOF, pexpect, TIMEOUT):
         child.close(force=True)
         return None
-
-    child.sendline(username)
-    index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
-        child.close(force=True)
-        return None
-
-    child.sendline(passwd)
-    child.expect('>')
-    child.sendline('super')
-    index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
-        child.close(force=True)
-        return None
-    child.sendline(super_passwd)
-    child.expect('>')
-    child.sendline('sys')
-    child.expect(']')
-
-    result = []
-    child.sendline('disp cu | in link-aggregation group .* mode')
-    while True:
-        index = child.expect([']', '---- More ----', pexpect.EOF,
-                              pexpect.TIMEOUT])
-        if index == 0:
-            result.append(child.before)
-            child.sendline('quit')
-            child.sendline('quit')
-            child.close()
-            return result
-        elif index == 1:
-            result.append(child.before)
-            child.send(' ')
-        else:
-            child.close(force=True)
-            return None
-    return result
 
 
 def telnet_s93(ip, username=username, passwd=passwd, super_passwd=super_passwd):
-    child = pexpect.spawn('telnet {0}'.format(ip))
-    fout = file('out.log', 'w')
-    child.logfile = fout
+    try:
+        child = pexpect.spawn('telnet {0}'.format(ip))
+        fout = file('out.log', 'w')
+        child.logfile = fout
 
-    index = child.expect(['Username:', pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
-        child.close(force=True)
-        return None
+        child.expect('Username:')
+        child.sendline(username)
 
-    child.sendline(username)
-    index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
-        child.close(force=True)
-        return None
-
-    child.sendline(passwd)
-    child.expect('>')
-    child.sendline('super')
-    index = child.expect(['Password:', pexpect.EOF, pexpect.TIMEOUT])
-    if index != 0:
-        child.close(force=True)
-        return None
-    child.sendline(super_passwd)
-    child.expect('>')
-    child.sendline('sys')
-    child.expect(']')
-
-    result = []
-    child.sendline('disp cu interface Eth-Trunk')
-    while True:
-        index = child.expect([']', '---- More ----', pexpect.EOF,
-                              pexpect.TIMEOUT])
+        child.expect('Password:')
+        child.sendline(passwd)
+        child.expect('>')
+        child.sendline('super')
+        index = child.expect(['Password:', '>'])
         if index == 0:
-            result.append(child.before)
-            child.sendline('quit')
-            child.sendline('quit')
-            child.close()
-            return result
-        elif index == 1:
-            result.append(child.before)
-            child.send(' ')
+            child.sendline(super_passwd)
+            child.expect('>')
+            child.sendline('sys')
         else:
-            child.close(force=True)
-            return None
-    return result
+            child.sendline('sys')
+        child.expect(']')
+
+        result = []
+        child.sendline('disp cu interface Eth-Trunk')
+        while True:
+            index = child.expect([']', '---- More ----', pexpect.EOF,
+                                  pexpect.TIMEOUT], timeout=120)
+            if index == 0:
+                result.append(child.before)
+                child.sendline('quit')
+                child.sendline('quit')
+                child.close()
+                return result
+            elif index == 1:
+                result.append(child.before)
+                child.send(' ')
+                continue
+            else:
+                child.close(force=True)
+                return None
+        return result
+    except (pexpect.EOF, pexpect.TIMEOUT):
+        child.close(force=True)
+        return None
 
 
 def s93(ip):
@@ -161,7 +150,7 @@ def s93(ip):
         result = result.replace('\x1b[42D', '')
         result = result.split('#')
         result = result[1:-1]
-        result = [x.strip() for x in result if 'mode lacp-static' not in x]
+        result = [x.strip() for x in result if 'mode lacp' not in x]
         return 'success', result
 
 
@@ -193,6 +182,7 @@ def s89t64g(ip):
 
 def test():
     functions = dict(s8505=s85,
+                     s85=s85,
                      s8508=s85,
                      s9306=s93,
                      s8905=s89t64g,

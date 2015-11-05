@@ -56,7 +56,6 @@ def zte_get_info(ip, username, password, command):
                 child.send(" ")
                 continue
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
-        child.close(force=True)
         return 'fail', []
     result = ''.join(result)
     result = result.split('\r\n')[1:-1]
