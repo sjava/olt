@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import ConfigParser
 import pexpect
 import csv
@@ -203,14 +204,17 @@ def test():
                 mark, reslult = functions[model.strip().lower()](ip.strip())
             except KeyError as e:
                 with open('fail.txt', 'a') as flog:
-                    flog.write('{0},{1},{2},{3}:model fail\n'.format(area, ip, name, model))
+                    flog.write('{0},{1},{2},{3}:model fail\n'.format(
+                        area, ip, name, model))
             else:
                 if mark == 'fail':
                     with open('fail.txt', 'a') as flog:
-                        flog.write('{0},{1},{2},{3}:fail\n'.format(area, ip, name, model))
+                        flog.write('{0},{1},{2},{3}:fail\n'.format(
+                            area, ip, name, model))
                 else:
                     with open('success.txt', 'a') as fsuccess:
-                        fsuccess.write('{0},{1},{2},{3}:\n'.format(area, ip, name, model))
+                        fsuccess.write('{0},{1},{2},{3}:\n'.format(
+                            area, ip, name, model))
                         for i in reslult:
                             fsuccess.write(i + '\n\n')
                         fsuccess.write('-' * 80 + '\n')
