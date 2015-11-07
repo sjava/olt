@@ -25,32 +25,6 @@ def olt_check():
             os.remove(f)
         os.mknod(f)
 
-    with open(olts_file) as olts, open(log_file, 'a') as flog, open(
-            result_file, 'a') as fresult:
-        for olt in olts:
-            mark = 'fail'
-            record = []
-            ip, factory, area = [x.strip() for x in olt.split(',')]
-            if factory.lower() == 'zte':
-                mark, record = device.olt.zte_get_info(
-                    ip, zte_olt_username, zte_olt_password, zte_command)
-            elif factory.lower() == 'hw':
-                pass
-            flog.write('{0}:{1}\n'.format(olt.strip(), mark))
-            record = record_clear(record)
-            if record and mark == 'success':
-                fresult.write('{0}:\n'.format(olt.strip(), ))
-                for r in record:
-                    fresult.write('{0}\n'.format(r, ))
-                fresult.write('*' * 60 + '\n')
-
-
-def olt_check_f():
-    for f in [log_file, result_file]:
-        if os.path.exists(f):
-            os.remove(f)
-        os.mknod(f)
-
     olts = [x.strip() for x in open(olts_file)]
     funcy.lmap(funcy.compose(output_info, olt_get_info), olts)
 
@@ -87,11 +61,6 @@ def result_clear(record):
     if record:
         record = [x for x in record if 'GTGO' in x]
     return record
-
-# def record_clear(record):
-#     if record:
-#         record = [x for x in record if 'Session 1' in x]
-#     return record
 
 
 def main():
