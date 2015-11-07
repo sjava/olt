@@ -19,13 +19,6 @@ zte_command = "show card"
 hw_command = ""
 
 
-def olt_check_f():
-    for f in [log_file, result_file]:
-        if os.path.exists(f):
-            os.remove(f)
-        os.mknod(f)
-
-
 def olt_check():
     for f in [log_file, result_file]:
         if os.path.exists(f):
@@ -59,15 +52,16 @@ def olt_check_f():
         os.mknod(f)
 
     olts = [x.strip() for x in open(olts_file)]
-    map(funcy.compose(output_info, olt_get_info), olts)
+    funcy.lmap(funcy.compose(output_info, olt_get_info), olts)
 
 
-def output_info(mark, result, olt):
+def output_info(info):
+    mark, result, olt = info
     with open(log_file, 'a') as logging:
         logging.write("{0}:{1}\n".format(olt, mark))
     record = result_clear(result)
     if record and mark == 'success':
-        with open('result_file', 'a') as fp:
+        with open(result_file, 'a') as fp:
             fp.write('{0}:\n'.format(olt, ))
             for r in record:
                 fp.write('{0}\n'.format(r, ))
@@ -86,12 +80,12 @@ def olt_get_info(olt):
     no_company = lambda x: ['fail', None]
     functions = dict(zte=zte_get_info, hw=hw_get_info)
     ip, company = olt.split(',')[:2]
-    return functions.get(company, no_company)(ip).append(olt)
+    return functions.get(company, no_company)(ip) + [olt]
 
 
-def record_clear(record):
+def result_clear(record):
     if record:
-        record = [x for x in record if 'ETGO' in x]
+        record = [x for x in record if 'GTGO' in x]
     return record
 
 # def record_clear(record):
