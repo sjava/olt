@@ -40,7 +40,7 @@ def telnet_hw(ip, username, password):
     return child
 
 
-def zte_get_info(ip, username, password, command):
+def zte_get_info(ip="", username="", password="", command=""):
     try:
         result = []
         child = telnet_zte(ip, username, password)
@@ -56,10 +56,14 @@ def zte_get_info(ip, username, password, command):
                 child.send(" ")
                 continue
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
-        return 'fail', []
+        return ['fail', None]
     result = ''.join(result)
     result = result.split('\r\n')[1:-1]
-    return 'success', result
+    return ['success', result]
+
+
+def hw_get_info(ip="", username="", password="", command=""):
+    return ['fail', None]
 
 
 def main():
