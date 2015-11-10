@@ -57,9 +57,13 @@ def zte_get_info(ip="", username="", password="", command=""):
                 continue
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
         return ['fail', None]
-    result = ''.join(result)
-    result = result.split('\r\n')[1:-1]
-    return ['success', result]
+    rslt = ''.join(result).split('\r\n')[1:-1]
+    return ['success', zte_card_info(rslt)]
+
+
+def zte_card_info(result):
+    rslt = [x.split() for x in result if 'INSERVICE' in x or 'STANDBY' in x]
+    return [(x[2], x[4]) for x in rslt]
 
 
 def hw_get_info(ip="", username="", password="", command=""):

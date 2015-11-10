@@ -5,6 +5,7 @@ import configparser
 import funcy
 import os
 
+
 config = configparser.ConfigParser()
 config.read('config.ini')
 zte_olt_username = config.get('olt', 'zte_username')
