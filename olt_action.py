@@ -4,6 +4,8 @@ import device.olt
 import configparser
 import funcy
 import os
+from py2neo import Graph, Node
+from py2neo import authenticate
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -13,10 +15,16 @@ zte_olt_password = config.get('olt', 'zte_password')
 hw_olt_username = config.get('olt', 'hw_username')
 hw_olt_password = config.get('olt', 'hw_password')
 
+neo4j_username = config.get('neo4j', 'username')
+neo4j_password = config.get('neo4j', 'password')
+
 olts_file, log_file, result_file = ('olts.txt', 'result/olt_log.txt',
                                     'result/olt_info.txt')
 zte_command = "show card"
 hw_command = ""
+
+authenticate('61.155.48.36:7474', neo4j_username, neo4j_password)
+graph = Graph("http://61.155.48.36:7474/db/data")
 
 
 def olt_check():
@@ -25,7 +33,11 @@ def olt_check():
             os.remove(f)
         os.mknod(f)
 
-    olts = [x.strip() for x in open(olts_file)]
+    # olts = [x.strip() for x in open(olts_file)]
+    olts = graph.find('Olt',
+                      property_key='ip',
+                      property_value='222.188.51.208')
+    olts = [(x['ip'], x['company'], x['area']) for x in olts]
     funcy.lmap(funcy.compose(output_info, olt_get_info), olts)
 
 
@@ -53,8 +65,9 @@ def olt_get_info(olt):
                                 command=hw_command)
     no_company = lambda x: ['fail', None]
     functions = dict(zte=zte_get_info, hw=hw_get_info)
-    ip, company = olt.split(',')[:2]
-    return functions.get(company, no_company)(ip) + [olt]
+    # ip, company = olt.split(',')[:2]
+    ip, company = olt[:2]
+    return functions.get(company, no_company)(ip) + [','.join(olt)]
 
 
 def result_clear(record):
