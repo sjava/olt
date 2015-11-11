@@ -92,7 +92,7 @@ def hw_cards(ip):
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
     cards = [x.split() for x in rslt if 'Normal' in x or 'normal' in x]
-    return ['success', [(x[0], x[1]) for x in rslt]]
+    return ['success', [(x[0], x[1]) for x in cards]]
 
 
 def main():
