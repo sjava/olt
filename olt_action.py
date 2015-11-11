@@ -36,8 +36,8 @@ def olt_check():
 
     # olts = [x.strip() for x in open(olts_file)]
     olts = graph.find('Olt',
-                      property_key='ip',
-                      property_value='222.188.51.208')
+                      property_key='company',
+                      property_value='zte')
     olts = [(x['ip'], x['company'], x['area']) for x in olts]
     funcy.lmap(funcy.compose(output_info, olt_get_info), olts)
 
@@ -46,12 +46,27 @@ def output_info(info):
     mark, result, olt = info
     with open(log_file, 'a') as logging:
         logging.write("{0}:{1}\n".format(olt, mark))
-    record = result_clear(result)
-    if record and mark == 'success':
+    if result and mark == 'success':
+        ip = olt.split(',')[0]
+        node = graph.find_one('Olt', property_key='ip', property_value=ip)
+        card_nodes = map(create_card_node, result)
+        funcy.lmap(lambda x: graph.create((node, 'HAS', x)), card_nodes)
+
+
+def create_card_node(card):
+    node, = graph.create(Node('Card', slot=card[0], name=card[1]))
+    return node
+
+
+def output_info_f(info):
+    mark, result, olt = info
+    with open(log_file, 'a') as logging:
+        logging.write("{0}:{1}\n".format(olt, mark))
+    if result and mark == 'success':
         with open(result_file, 'a') as fp:
             fp.write('{0}:\n'.format(olt, ))
-            for r in record:
-                fp.write('{0}\n'.format(r, ))
+            for r in result:
+                fp.write('{0}\n'.format(r[1], ))
             fp.write('*' * 60 + '\n')
 
 

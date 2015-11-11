@@ -67,7 +67,31 @@ def zte_card_info(result):
 
 
 def hw_get_info(ip="", username="", password="", command=""):
-    return ['fail', None]
+    try:
+        result = []
+        child = telnet_hw(ip, username, password)
+        child.sendline(command)
+        while True:
+            index = child.expect([hw_prompt, hw_pager], timeout=120)
+            if index == 0:
+                result.append(child.before)
+                child.sendline('quit')
+                child.expect(':')
+                child.sendline('y')
+                break
+            elif index == 1:
+                result.append(child.before)
+                child.send(" ")
+                continue
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None]
+    rslt = ''.join(result).split('\r\n')[1:-1]
+    return ['success', hw_card_info(rslt)]
+
+
+def hw_card_info(result):
+    rslt = [x.split() for x in result if 'Normal' in x or 'normal' in x]
+    return [(x[0], x[1]) for x in rslt]
 
 
 def main():
