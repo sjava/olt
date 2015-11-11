@@ -68,7 +68,7 @@ def zte_cards(ip):
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
     cards = [x.split() for x in rslt if 'INSERVICE' in x or 'STANDBY' in x]
-    return ['success'] + [(x[2], x[4]) for x in cards]
+    return ['success', [(x[2], x[4]) for x in cards]]
 
 
 def zte_get_info(ip="", username="", password="", command=""):
