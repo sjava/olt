@@ -5,7 +5,7 @@ import sys
 import configparser
 
 config = configparser.ConfigParser()
-config.read('../config.ini')
+config.read('config.ini')
 zte_olt_username = config.get('olt', 'zte_username')
 zte_olt_password = config.get('olt', 'zte_password')
 
@@ -67,7 +67,7 @@ def zte_cards(ip):
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
-    cards = [x.split() for x in rslt if 'INSERVICE' in x or 'STANDBY' in x]
+    cards = [x.replace('\x08', '').strip().split() for x in rslt if 'INSERVICE' in x or 'STANDBY' in x]
     return ['success', [(x[2], x[4]) for x in cards]]
 
 
@@ -91,7 +91,7 @@ def hw_cards(ip):
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
-    cards = [x.split() for x in rslt if 'Normal' in x or 'normal' in x]
+    cards = [x.replace('\x1b[37D', '').strip().split() for x in rslt if 'Normal' in x or 'normal' in x]
     return ['success', [(x[0], x[1]) for x in cards]]
 
 
