@@ -120,7 +120,7 @@ def hw_power(ip):
     rslt = ''.join(result).split('\r\n')[1:-1]
     powerInfo = [x.replace('\x1b[37D', '').strip().split()
                  for x in rslt if 'Power fault' in x]
-    return ['success', [x[2] for x in cards]]
+    return ['success', [x[2] for x in powerInfo]]
 
 
 def main():
