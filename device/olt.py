@@ -67,7 +67,8 @@ def zte_cards(ip):
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
-    cards = [x.replace('\x08', '').strip().split() for x in rslt if 'INSERVICE' in x or 'STANDBY' in x]
+    cards = [x.replace('\x08', '').strip().split()
+             for x in rslt if 'INSERVICE' in x or 'STANDBY' in x]
     return ['success', [(x[2], x[4]) for x in cards]]
 
 
@@ -91,8 +92,35 @@ def hw_cards(ip):
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
-    cards = [x.replace('\x1b[37D', '').strip().split() for x in rslt if 'Normal' in x or 'normal' in x]
+    cards = [x.replace('\x1b[37D', '').strip().split()
+             for x in rslt if 'Normal' in x or 'normal' in x]
     return ['success', [(x[0], x[1]) for x in cards]]
+
+
+def hw_power(ip):
+    try:
+        result = []
+        child = telnet_hw(ip)
+        child.sendline("config")
+        child.expect(hw_prompt)
+        child.sendline("interface emu 0")
+        child.expect(hw_prompt)
+        child.sendline("display fan alarm")
+        child.expect(hw_prompt)
+        result.append(child.before)
+        child.sendline("quit")
+        child.expect(hw_prompt)
+        child.sendline("quit")
+        child.expect(hw_prompt)
+        child.sendline("quit")
+        child.expect(':')
+        child.sendline('y')
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None]
+    rslt = ''.join(result).split('\r\n')[1:-1]
+    powerInfo = [x.replace('\x1b[37D', '').strip().split()
+                 for x in rslt if 'Power fault' in x]
+    return ['success', [x[2] for x in cards]]
 
 
 def main():
