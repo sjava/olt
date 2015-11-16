@@ -69,7 +69,7 @@ def zte_cards(ip):
     rslt = ''.join(result).split('\r\n')[1:-1]
     cards = [x.replace('\x08', '').strip().split()
              for x in rslt if 'INSERVICE' in x or 'STANDBY' in x]
-    return ['success', [(x[2], x[4]) for x in cards]]
+    return ['success', [(x[2], x[3]) for x in cards]]
 
 
 def hw_cards(ip):

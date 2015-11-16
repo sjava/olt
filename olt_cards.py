@@ -6,6 +6,7 @@ import funcy
 import os
 from py2neo import Graph, Node
 from py2neo import authenticate
+from multiprocessing import Pool
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -51,14 +52,18 @@ def output_info(info):
 
 def import_cards():
     clear_log()
-    # olts = graph.find('Olt', property_key='company', property_value='zte')
-    ip = [x.strip('\r\n') for x in open('ip.csv')]
-    nodes = [graph.find_one('Olt',
-                            property_key='ip',
-                            property_value=x) for x in ip]
+    nodes = graph.find('Olt', property_key='company', property_value='zte')
+    # ip = [x.strip('\r\n') for x in open('ip.csv')]
+    # nodes = [graph.find_one('Olt',
+    #                         property_key='ip',
+    #                         property_value=x) for x in ip]
     #  nodes = graph.find('Olt', property_key='ip', property_value='61.147.63.247')
     olts = [(x['ip'], x['company'], x['area']) for x in nodes]
-    funcy.lmap(funcy.compose(output_info, get_cards), olts)
+    # funcy.lmap(funcy.compose(output_info, get_cards), olts)
+    pool = Pool(4)
+    pool.map(funcy.compose(output_info, get_cards), olts)
+    pool.close()
+    pool.join()
 
 
 def main():
