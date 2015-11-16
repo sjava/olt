@@ -53,7 +53,8 @@ def output_info(info):
 
 def import_cards():
     clear_log()
-    nodes = graph.find('Olt', property_key='company', property_value='zte')
+    nodes = graph.find('Olt', property_key='ip', property_value='222.188.51.211')
+    #  nodes = graph.find('Olt', property_key='company', property_value='zte')
     # ip = [x.strip('\r\n') for x in open('ip.csv')]
     # nodes = [graph.find_one('Olt',
     #                         property_key='ip',
@@ -64,7 +65,7 @@ def import_cards():
 
 
 def main():
-    import_cards()
+    pass
 
 if __name__ == '__main__':
     main()
