@@ -7,6 +7,7 @@ import os
 from py2neo import Graph, Node
 from py2neo import authenticate
 from toolz import compose, map
+from multiprocessing import Pool
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -16,8 +17,8 @@ neo4j_password = config.get('neo4j', 'password')
 olts_file, log_file, result_file = ('olts.txt', 'result/olt_log.txt',
                                     'result/olt_info.txt')
 
-authenticate('61.155.48.36:7474', neo4j_username, neo4j_password)
-graph = Graph("http://61.155.48.36:7474/db/data")
+# authenticate('61.155.48.36:7474', neo4j_username, neo4j_password)
+# graph = Graph("http://61.155.48.36:7474/db/data")
 
 
 def clear_log():
@@ -40,6 +41,8 @@ def create_card_node(card):
 
 
 def output_info(info):
+    authenticate('61.155.48.36:7474', neo4j_username, neo4j_password)
+    graph = Graph("http://61.155.48.36:7474/db/data")
     mark, result, olt = info
     with open(log_file, 'a') as logging:
         logging.write("{0}:{1}\n".format(olt, mark))
@@ -48,7 +51,6 @@ def output_info(info):
         node = graph.find_one('Olt', property_key='ip', property_value=ip)
         card_nodes = list(map(create_card_node, result))
         list(map(lambda x: graph.create((node, 'HAS', x)), card_nodes))
-    return
 
 
 def import_cards():
@@ -60,11 +62,15 @@ def import_cards():
     #                         property_value=x) for x in ip]
     #  nodes = graph.find('Olt', property_key='ip', property_value='61.147.63.247')
     olts = [(x['ip'], x['company'], x['area']) for x in nodes]
-    list(map(compose(output_info, get_cards), olts))
+    pool = Pool(4)
+    list(pool.map(compose(output_info, get_cards), olts))
+    pool.close()
+    pool.join
 
 
 def main():
     import_cards()
+
 
 if __name__ == '__main__':
     main()
