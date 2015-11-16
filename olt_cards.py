@@ -6,7 +6,7 @@ import funcy
 import os
 from py2neo import Graph, Node
 from py2neo import authenticate
-from multiprocessing import Pool
+from toolz import compose, map
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -46,8 +46,9 @@ def output_info(info):
     if result and mark == 'success':
         ip = olt.split(',')[0]
         node = graph.find_one('Olt', property_key='ip', property_value=ip)
-        card_nodes = map(create_card_node, result)
-        funcy.lmap(lambda x: graph.create((node, 'HAS', x)), card_nodes)
+        card_nodes = list(map(create_card_node, result))
+        list(map(lambda x: graph.create((node, 'HAS', x)), card_nodes))
+    return
 
 
 def import_cards():
@@ -59,16 +60,11 @@ def import_cards():
     #                         property_value=x) for x in ip]
     #  nodes = graph.find('Olt', property_key='ip', property_value='61.147.63.247')
     olts = [(x['ip'], x['company'], x['area']) for x in nodes]
-    # funcy.lmap(funcy.compose(output_info, get_cards), olts)
-    pool = Pool(4)
-    pool.map(funcy.compose(output_info, get_cards), olts)
-    pool.close()
-    pool.join()
+    list(map(compose(output_info, get_cards), olts))
 
 
 def main():
-    pass
-
+    import_cards()
 
 if __name__ == '__main__':
     main()
