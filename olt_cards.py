@@ -66,7 +66,8 @@ def import_cards():
 
 
 def main():
-    import_cards()
+    #  import_cards()
+    pass
 
 
 if __name__ == '__main__':
