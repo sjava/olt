@@ -2,12 +2,10 @@
 # -*- coding: utf-8 -*-
 import device.olt
 import configparser
-import funcy
 import os
 from py2neo import Graph, Node
 from py2neo import authenticate
 from toolz import compose, map
-from multiprocessing import Pool
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -33,11 +31,6 @@ def get_cards(olt):
     no_company = lambda x: ['fail', None]
     ip, company = olt[:2]
     return functions.get(company, no_company)(ip) + [','.join(olt)]
-
-
-#  def create_card_node(card):
-    #  node, = graph.create(Node('Card', slot=card[0], name=card[1]))
-    #  return node
 
 
 def output_info(info):
