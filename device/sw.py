@@ -18,7 +18,7 @@ def telnet_s89t64g(ip,
                    username=username,
                    password=password,
                    super_password=super_password):
-    child = pexpect.spawn('telnet {0}'.format(ip))
+    child = pexpect.spawnu('telnet {0}'.format(ip))
     child.logfile = logfile
 
     child.expect('Username:')
@@ -38,7 +38,7 @@ def telnet_s85(ip,
                username=username,
                password=password,
                super_password=super_password):
-    child = pexpect.spawn('telnet {0}'.format(ip))
+    child = pexpect.spawnu('telnet {0}'.format(ip))
     child.logfile = logfile
 
     child.expect('Username:')
@@ -59,7 +59,7 @@ def telnet_s93(ip,
                username=username,
                password=password,
                super_password=super_password):
-    child = pexpect.spawn('telnet {0}'.format(ip))
+    child = pexpect.spawnu('telnet {0}'.format(ip))
     child.logfile = logfile
 
     child.expect('Username:')
