@@ -102,9 +102,9 @@ def s93_card_check(ip):
     rslt = ''.join(result).split('\r\n')[1:-1]
     info = [x.replace('\x1b[37D', '').strip().split()
             for x in rslt if 'Present' in x and 'PowerOn' in x]
-    card1 = [(x[0], x[2]) for x in info if not x[0].Isdigit()]
-    card2 = [('x', x[0]) for x in info if x[0].Isdigit()]
-    return ['success'] + card1 + card2
+    card1 = [(x[0], x[2]) for x in info if x[0].isdigit()]
+    card2 = [('x', x[0]) for x in info if not x[0].isdigit()]
+    return ['success'] + [card1 + card2]
 
 
 def main():
