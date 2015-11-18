@@ -18,7 +18,7 @@ def telnet_s89t64g(ip,
                    username=username,
                    password=password,
                    super_password=super_password):
-    child = pexpect.spawn('telnet {0}'.format(ip))
+    child = pexpect.spawnu('telnet {0}'.format(ip))
     child.logfile = logfile
 
     child.expect('Username:')
@@ -38,7 +38,7 @@ def telnet_s85(ip,
                username=username,
                password=password,
                super_password=super_password):
-    child = pexpect.spawn('telnet {0}'.format(ip))
+    child = pexpect.spawnu('telnet {0}'.format(ip))
     child.logfile = logfile
 
     child.expect('Username:')
@@ -59,8 +59,8 @@ def telnet_s93(ip,
                username=username,
                password=password,
                super_password=super_password):
-    child = pexpect.spawn('telnet {0}'.format(ip))
-    child.logfile = logout
+    child = pexpect.spawnu('telnet {0}'.format(ip))
+    child.logfile = logfile
 
     child.expect('Username:')
     child.sendline(username)
@@ -104,7 +104,7 @@ def s93_card_check(ip):
             for x in rslt if 'Present' in x and 'PowerOn' in x]
     card1 = [(x[0], x[2]) for x in info if not x[0].Isdigit()]
     card2 = [('x', x[0]) for x in info if x[0].Isdigit()]
-    return card1 + card2
+    return ['success'] + card1 + card2
 
 
 def main():
