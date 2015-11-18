@@ -59,6 +59,7 @@ def zte_cards(ip):
             if index == 0:
                 result.append(child.before)
                 child.sendline('exit')
+                child.close()
                 break
             else:
                 result.append(child.before)
@@ -84,6 +85,7 @@ def hw_cards(ip):
                 child.sendline('quit')
                 child.expect(':')
                 child.sendline('y')
+                child.close()
                 break
             else:
                 result.append(child.before)
@@ -115,6 +117,7 @@ def hw_power(ip):
         child.sendline("quit")
         child.expect(':')
         child.sendline('y')
+        child.close()
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
