@@ -11,16 +11,11 @@ import re
 #  password = config.get('switch', 'passwd')
 #  super_password = config.get('switch', 'super_passwd')
 
-s93_pager = "---- More ----"
-s85_pager = "---- More ----"
-t64_pager = "--More--"
+pager = "---- More ----"
 logfile = sys.stdout
 
 
-def telnet_s93(ip,
-               username=username,
-               password=password,
-               super_password=super_password):
+def telnet(ip, username, password, super_password):
     child = pexpect.spawn('telnet {0}'.format(ip), encoding='ISO-8859-1')
     child.logfile = logfile
 
@@ -41,13 +36,13 @@ def telnet_s93(ip,
     return child
 
 
-def s93_card_check(ip, username, password, super_password):
+def card_check(ip='', username='', password='', super_password=''):
     try:
         result = []
-        child = telnet_s93(ip, username, password, super_password)
+        child = telnet(ip, username, password, super_password)
         child.sendline('display dev')
         while True:
-            index = child.expect([']', s93_pager], timeout=120)
+            index = child.expect([']', pager], timeout=120)
             if index == 0:
                 result.append(child.before)
                 child.sendline('quit')
