@@ -20,7 +20,7 @@ logfile = sys.stdout
 
 
 def telnet_zte(ip="", username=zte_olt_username, password=zte_olt_password):
-    child = pexpect.spawnu("telnet {0}".format(ip, ))
+    child = pexpect.spawn('telnet {0}'.format(ip), encoding='ISO-8859-1')
     child.logfile = logfile
 
     child.expect("[uU]sername:")
@@ -32,7 +32,7 @@ def telnet_zte(ip="", username=zte_olt_username, password=zte_olt_password):
 
 
 def telnet_hw(ip="", username=hw_olt_username, password=hw_olt_password):
-    child = pexpect.spawnu("telnet {0}".format(ip, ))
+    child = pexpect.spawn('telnet {0}'.format(ip), encoding='ISO-8859-1')
     child.logfile = logfile
     child.expect("User name:")
     child.sendline(username)
