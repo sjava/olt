@@ -5,12 +5,6 @@ import sys
 import configparser
 import re
 
-config = configparser.ConfigParser()
-config.read('config.ini')
-username = config.get('switch', 'username')
-password = config.get('switch', 'passwd')
-super_password = config.get('switch', 'super_passwd')
-
 s93_pager = "---- More ----"
 s85_pager = "---- More ----"
 t64_pager = "--More--"
