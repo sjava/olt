@@ -6,14 +6,19 @@ import os
 from py2neo import Graph, Node
 from py2neo import authenticate
 from toolz import compose, map
+from device import switch
 
 config = configparser.ConfigParser()
 config.read('config.ini')
 neo4j_username = config.get('neo4j', 'username')
 neo4j_password = config.get('neo4j', 'password')
 
-olts_file, log_file, result_file = ('olts.txt', 'result/olt_log.txt',
-                                    'result/olt_info.txt')
+sw_username = config.get('switch', 'username')
+sw_password = config.get('switch', 'passwd')
+sw_super_password = config.get('switch', 'super_passwd')
+
+olts_file, log_file, result_file = ('sw.txt', 'result/sw_log.txt',
+                                    'result/sw_info.txt')
 
 authenticate('61.155.48.36:7474', neo4j_username, neo4j_password)
 graph = Graph("http://61.155.48.36:7474/db/data")
