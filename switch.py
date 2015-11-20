@@ -7,6 +7,10 @@ from py2neo import Graph, Node
 from py2neo import authenticate
 from toolz import compose, map, partial
 import device.switch.S93
+import device.switch.S85
+import device.switch.S89
+import device.switch.T64
+
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -43,6 +47,12 @@ def import_sw(file):
 
 
 s93_card_check = partial(device.switch.S93.card_check, username=sw_username,
+                         password=sw_password, super_password=sw_super_password)
+s85_card_check = partial(device.switch.S85.card_check, username=sw_username,
+                         password=sw_password, super_password=sw_super_password)
+s89_card_check = partial(device.switch.S89.card_check, username=sw_username,
+                         password=sw_password, super_password=sw_super_password)
+t64_card_check = partial(device.switch.T64.card_check, username=sw_username,
                          password=sw_password, super_password=sw_super_password)
 # def get_cards(olt):
 #     functions = dict(zte=device.olt.zte_cards, hw=device.olt.hw_cards)

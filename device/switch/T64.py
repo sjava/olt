@@ -30,7 +30,7 @@ def card_check(ip='', username='', password='', super_password=''):
     try:
         result = []
         power = []
-        child = telnet(ip)
+        child = telnet(ip, username, password, super_password)
         child.sendline('show power')
         child.expect('#')
         power.append(child.before)
