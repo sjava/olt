@@ -3,6 +3,7 @@
 import device.olt
 import configparser
 import os
+import multiprocessing
 from py2neo import Graph, Node
 from py2neo import authenticate
 from toolz import compose, map, partial
@@ -51,34 +52,62 @@ s89_card_check = partial(S89.card_check, username=sw_username,
                          password=sw_password, super_password=sw_super_password)
 t64_card_check = partial(T64.card_check, username=sw_username,
                          password=sw_password, super_password=sw_super_password)
-# def get_cards(olt):
-#     functions = dict(zte=device.olt.zte_cards, hw=device.olt.hw_cards)
-#     no_company = lambda x: ['fail', None]
-#     ip, company = olt[:2]
-#     return functions.get(company, no_company)(ip) + [','.join(olt)]
 
-# def output_info(info):
-#     create_card_node = lambda x: graph.create(Node('Card', slot=x[0], name=x[1]))[0]
-#     mark, result, olt = info
-#     with open(log_file, 'a') as logging:
-#         logging.write("{0}:{1}\n".format(olt, mark))
-#     if result and mark == 'success':
-#         ip = olt.split(',')[0]
-#         node = graph.find_one('Olt', property_key='ip', property_value=ip)
-#         card_nodes = map(create_card_node, result)
-#         list(map(lambda x: graph.create((node, 'HAS', x)), card_nodes))
 
-# def import_cards():
-#     clear_log()
-#     #  nodes = graph.find('Olt', property_key='ip', property_value='222.188.51.211')
-#     nodes = graph.find('Olt', property_key='company', property_value='zte')
-#     # ip = [x.strip('\r\n') for x in open('ip.csv')]
-#     # nodes = [graph.find_one('Olt',
-#     #                         property_key='ip',
-#     #                         property_value=x) for x in ip]
-#     #  nodes = graph.find('Olt', property_key='ip', property_value='61.147.63.247')
-#     olts = [(x['ip'], x['company'], x['area']) for x in nodes]
-#     list(map(compose(output_info, get_cards), olts))
+def card_entry(info):
+    create_card_node = lambda x: graph.create(Node('Card', slot=x[0], name=x[1]))[0]
+    mark, cards, switch = info
+    with open(log_file, 'a') as flog:
+        flog.write("{0}:{1}\n".format(switch, mark))
+    if cards and mark == 'success':
+        ip = switch.split(',')[0]
+        switch_node = graph.find_one('Switch', property_key='ip', property_value=ip)
+        card_nodes = map(create_card_node, cards)
+        list(map(lambda x: graph.create((switch_node, 'HAS', x)), card_nodes))
+
+
+def card_entry_m(lock, info):
+    create_card_node = lambda x: graph.create(Node('Card', slot=x[0], name=x[1]))[0]
+    mark, cards, switch = info
+    with lock:
+        with open(log_file, 'a') as flog:
+            flog.write("{0}:{1}\n".format(switch, mark))
+    if cards and mark == 'success':
+        ip = switch.split(',')[0]
+        with lock:
+            switch_node = graph.find_one('Switch', property_key='ip', property_value=ip)
+            card_nodes = map(create_card_node, cards)
+            list(map(lambda x: graph.create((switch_node, 'HAS', x)), card_nodes))
+
+
+def get_card(switch):
+    functions = dict(S9306=s93_card_check,
+                     S8508=s85_card_check,
+                     S8505=s85_card_check,
+                     S9303=s93_card_check,
+                     S8905=s89_card_check,
+                     T64G=t64_card_check)
+    no_model = lambda x: ['fail', Node]
+    ip, model = switch[:2]
+    return functions.get(model, no_model)(ip) + [','.join(switch)]
+
+
+def card_check():
+    """
+    :returns: TODO
+
+    """
+    clear_log()
+    nodes = graph.find('Switch')
+    #  nodes = graph.find('Switch', property_key='model', property_value='S9306', limit=10)
+    switchs = [(x['ip'], x['model'], x['area']) for x in nodes]
+    #  list(map(compose(card_entry, get_card), switchs))
+    pool = multiprocessing.Pool(8)
+    lock = multiprocessing.Manager().Lock()
+    func = partial(card_entry_m, lock)
+    list(pool.map(compose(func, get_card), switchs))
+    pool.close()
+    pool.join()
 
 
 def main():
