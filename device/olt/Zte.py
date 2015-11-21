@@ -32,7 +32,7 @@ def telnet(ip="", username="", password=""):
 def card_check(ip='', username='', password=''):
     try:
         result = []
-        child = telnet_zte(ip, username, password)
+        child = telnet(ip, username, password)
         child.sendline("show card")
         while True:
             index = child.expect([zte_prompt, zte_pager], timeout=120)

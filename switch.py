@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import device.olt
 import configparser
 import os
 import multiprocessing
