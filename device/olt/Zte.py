@@ -4,13 +4,6 @@ import pexpect
 import sys
 import configparser
 
-# config = configparser.ConfigParser()
-# config.read('config.ini')
-# zte_olt_username = config.get('olt', 'zte_username')
-# zte_olt_password = config.get('olt', 'zte_password')
-
-# hw_olt_username = config.get('olt', 'hw_username')
-# hw_olt_password = config.get('olt', 'hw_password')
 
 zte_prompt = "#"
 zte_pager = "--More--"
@@ -51,6 +44,30 @@ def card_check(ip='', username='', password=''):
     cards = [x.replace('\x08', '').strip().split()
              for x in rslt if 'INSERVICE' in x or 'STANDBY' in x]
     return ['success', [(x[2], x[3]) for x in cards]]
+
+
+def epon_svlan(ip='', username='', password=''):
+    try:
+        result = []
+        child = telnet(ip, username, password)
+        child.sendline("show vlan-smart-qinq")
+        while True:
+            index = child.expect([zte_prompt, zte_pager], timeout=120)
+            if index == 0:
+                result.append(child.before)
+                child.sendline('exit')
+                child.close()
+                break
+            else:
+                result.append(child.before)
+                child.send(' ')
+                continue
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None]
+    rslt = ''.join(result).split('\r\n')[1:-1]
+    records = [x.replace('\x08', '').strip().split()
+               for x in rslt if 'OK' in x]
+    return ['success', [(x[0], x[5]) for x in records]]
 
 
 def main():
