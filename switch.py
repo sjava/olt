@@ -97,8 +97,8 @@ def card_check():
 
     """
     clear_log()
-    nodes = graph.find('Switch')
-    #  nodes = graph.find('Switch', property_key='model', property_value='S9306', limit=10)
+    #  nodes = graph.find('Switch')
+    nodes = graph.find('Switch', property_key='ip', property_value='222.188.51.52', limit=10)
     switchs = [(x['ip'], x['model'], x['area']) for x in nodes]
     #  list(map(compose(card_entry, get_card), switchs))
     pool = multiprocessing.Pool(8)

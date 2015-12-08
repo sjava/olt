@@ -3,7 +3,9 @@
 import pexpect
 import sys
 import configparser
-
+from itertools import product
+from toolz import unique
+import re
 
 zte_prompt = "#"
 zte_pager = "--More--"
@@ -65,9 +67,43 @@ def epon_svlan(ip='', username='', password=''):
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
-    records = [x.replace('\x08', '').strip().split()
-               for x in rslt if 'OK' in x]
+    records = [x.replace('\x08', '').strip().split() for x in rslt
+               if 'OK' in x]
     return ['success', [(x[0], x[5]) for x in records]]
+
+
+def gpon_svlan(ip='', username='', password='', slots=None):
+    ports = product(slots, range(1, 9))
+    cmds = map(
+        lambda x: "show service-port interface gpon-olt_1/{0}/{1}".format(x[0], x[1]),
+        ports)
+    try:
+        svlan = []
+        child = telnet(ip, username, password)
+        for cmd in cmds:
+            result = []
+            child.sendline(cmd)
+            while True:
+                index = child.expect([zte_prompt, zte_pager], timeout=120)
+                if index == 0:
+                    result.append(child.before)
+                    break
+                else:
+                    result.append(child.before)
+                    child.send(' ')
+                    continue
+            r = ''.join(result).split('\r\n')[1:-1]
+            v = [x.replace('\x08', '').strip().split()[1]
+                 for x in r if 'OK' in x and 'YES' in x]
+            v1 = [x for x in v if x.isdigit()]
+            p = re.findall(r'\d/\d{1,2}/\d', cmd)
+            svlan += product(p, unique(v1))
+        child.sendline('exit')
+        child.close()
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None]
+
+    return ['success', svlan, ip]
 
 
 def main():

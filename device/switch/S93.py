@@ -53,7 +53,7 @@ def card_check(ip='', username='', password='', super_password=''):
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
     info = [x.replace('\x1b[37D', '').strip().split()
-            for x in rslt if 'Present' in x and 'PowerOn' in x]
+            for x in rslt if 'Present' in x and 'Registered' in x]
     card1 = [(x[0], x[2]) for x in info if x[0].isdigit()]
     card2 = [('x', x[0]) for x in info if not x[0].isdigit()]
     return ['success'] + [card1 + card2]
