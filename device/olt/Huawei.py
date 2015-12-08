@@ -4,7 +4,6 @@ import pexpect
 import sys
 import re
 
-
 hw_prompt = "#"
 hw_pager = "---- More.*----"
 logfile = sys.stdout
@@ -103,9 +102,33 @@ def svlan(ip='', username='', password=''):
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
     info = [x.replace('\x1b[37D', '').strip() for x in rslt if 'QinQ' in x]
-    records = list(map(lambda x: re.findall(r'\s(\d+)\sQinQ.*pon\s(\d/.*/\d)\s', x)[0], info))
+    records = list(map(
+        lambda x: re.findall(r'\s(\d+)\sQinQ.*pon\s(\d/.*/\d)\s', x)[0], info))
     svlan = [(x[1], x[0]) for x in set(records)]
     return ['success', svlan]
+
+
+def hostname(ip='', username='', password=''):
+    try:
+        result = []
+        child = telnet(ip, username, password)
+        child.sendline("")
+        while True:
+            index = child.expect([hw_prompt, hw_pager], timeout=120)
+            if index == 0:
+                result.append(child.before)
+                child.sendline('quit')
+                child.expect(':')
+                child.sendline('y')
+                child.close()
+                break
+            else:
+                result.append(child.before)
+                child.send(" ")
+                continue
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None, ip]
+    return ['success', result[0].strip(), ip]
 
 
 def main():

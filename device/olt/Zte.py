@@ -106,6 +106,27 @@ def gpon_svlan(ip='', username='', password='', slots=None):
     return ['success', svlan, ip]
 
 
+def hostname(ip='', username='', password=''):
+    try:
+        result = []
+        child = telnet(ip, username, password)
+        child.sendline("")
+        while True:
+            index = child.expect([zte_prompt, zte_pager], timeout=120)
+            if index == 0:
+                result.append(child.before)
+                child.sendline('exit')
+                child.close()
+                break
+            else:
+                result.append(child.before)
+                child.send(' ')
+                continue
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None, ip]
+    return ['success', result[0].strip(), ip]
+
+
 def main():
     pass
 
