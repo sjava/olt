@@ -3,6 +3,8 @@
 import pexpect
 import sys
 import re
+from toolz import cons, concatv, unique
+from functools import reduce
 
 hw_prompt = "#"
 hw_pager = "---- More.*----"
@@ -155,7 +157,14 @@ def zhongji(ip='', username='', password=''):
     rec = [x.replace('\x1b[37D', '').strip().split()[2:]
            for x in rslt if 'add-member' in x]
 
-    return ['success', rec, ip]
+    def port(x):
+        p = x[2].split(',')
+        p1 = ['/'.join((x[1], y)) for y in p]
+        return cons(x[0], p1)
+
+    rec1 = [port(x) for x in rec]
+    rec2 = unique(reduce(concatv, rec1, []))
+    return ['success', rec2, ip]
 
 
 def main():
