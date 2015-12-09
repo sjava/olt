@@ -4,7 +4,7 @@ import pexpect
 import sys
 import configparser
 from itertools import product
-from toolz import unique
+from toolz import unique, partition, partitionby
 import re
 
 zte_prompt = "#"
@@ -125,6 +125,33 @@ def hostname(ip='', username='', password=''):
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
         return ['fail', None, ip]
     return ['success', result[0].strip(), ip]
+
+
+def zhongji(ip='', username='', password=''):
+    try:
+        result = []
+        child = telnet(ip, username, password)
+        child.sendline("show lacp internal")
+        while True:
+            index = child.expect([zte_prompt, zte_pager], timeout=120)
+            if index == 0:
+                result.append(child.before)
+                child.sendline('exit')
+                child.close()
+                break
+            else:
+                result.append(child.before)
+                child.send(' ')
+                continue
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None, ip]
+    rslt = ''.join(result).split('\r\n')[1:-1]
+    records = [x.replace('\x08', '').strip()
+               for x in rslt if 'Smartgroup' in x or 'selected' in x]
+    rec1 = [x.split()[0].lower().replace(':', '') for x in records]
+    rec2 = partition(2, partitionby(lambda x: 'smartgroup' in x, rec1))
+    rec3 = [{x[0][0]: x[1]} for x in rec2]
+    return ['success', rec3, ip]
 
 
 def main():

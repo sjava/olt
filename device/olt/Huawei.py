@@ -131,6 +131,33 @@ def hostname(ip='', username='', password=''):
     return ['success', result[0].strip(), ip]
 
 
+def zhongji(ip='', username='', password=''):
+    try:
+        result = []
+        child = telnet(ip, username, password)
+        child.sendline("display cu section bbs-config | in link-aggregation")
+        while True:
+            index = child.expect([hw_prompt, hw_pager], timeout=120)
+            if index == 0:
+                result.append(child.before)
+                child.sendline('quit')
+                child.expect(':')
+                child.sendline('y')
+                child.close()
+                break
+            else:
+                result.append(child.before)
+                child.send(" ")
+                continue
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None, ip]
+    rslt = ''.join(result).split('\r\n')[1:-1]
+    rec = [x.replace('\x1b[37D', '').strip().split()[2:]
+           for x in rslt if 'add-member' in x]
+
+    return ['success', rec, ip]
+
+
 def main():
     pass
 
