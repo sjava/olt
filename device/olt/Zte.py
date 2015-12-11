@@ -4,7 +4,7 @@ import pexpect
 import sys
 import configparser
 from itertools import product
-from toolz import unique, partition, partitionby
+from toolz import unique, partition, partitionby, remove
 import re
 
 zte_prompt = "#"
@@ -13,7 +13,8 @@ logfile = sys.stdout
 
 
 def telnet(ip="", username="", password=""):
-    child = pexpect.spawn('telnet {0}'.format(ip), encoding='ISO-8859-1')
+    child = pexpect.spawn(
+        'telnet {0}'.format(ip), encoding='ISO-8859-1')
     child.logfile = logfile
 
     child.expect("[uU]sername:")
@@ -75,8 +76,7 @@ def epon_svlan(ip='', username='', password=''):
 def gpon_svlan(ip='', username='', password='', slots=None):
     ports = product(slots, range(1, 9))
     cmds = map(
-        lambda x: "show service-port interface gpon-olt_1/{0}/{1}".format(x[0], x[1]),
-        ports)
+        lambda x: "show service-port interface gpon-olt_1/{0}/{1}".format(x[0], x[1]), ports)
     try:
         svlan = []
         child = telnet(ip, username, password)
@@ -84,7 +84,8 @@ def gpon_svlan(ip='', username='', password='', slots=None):
             result = []
             child.sendline(cmd)
             while True:
-                index = child.expect([zte_prompt, zte_pager], timeout=120)
+                index = child.expect(
+                    [zte_prompt, zte_pager], timeout=120)
                 if index == 0:
                     result.append(child.before)
                     break
@@ -101,7 +102,7 @@ def gpon_svlan(ip='', username='', password='', slots=None):
         child.sendline('exit')
         child.close()
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
-        return ['fail', None]
+        return ['fail', None, ip]
 
     return ['success', svlan, ip]
 
@@ -148,10 +149,37 @@ def zhongji(ip='', username='', password=''):
     rslt = ''.join(result).split('\r\n')[1:-1]
     records = [x.replace('\x08', '').strip()
                for x in rslt if 'Smartgroup' in x or 'selected' in x]
+    records = remove(lambda x: 'unselected' in x, records)
     rec1 = [x.split()[0].lower().replace(':', '') for x in records]
     rec2 = partition(2, partitionby(lambda x: 'smartgroup' in x, rec1))
-    rec3 = [{x[0][0]: x[1]} for x in rec2]
+    rec3 = {x[0][0]: x[1] for x in rec2}
     return ['success', rec3, ip]
+
+
+def traffic(ip='', username='', password='', port=''):
+    try:
+        result = []
+        child = telnet(ip, username, password)
+        child.sendline("show interface {port}".format(port=port))
+        while True:
+            index = child.expect([zte_prompt, zte_pager], timeout=120)
+            if index == 0:
+                result.append(child.before)
+                child.sendline('exit')
+                child.close()
+                break
+            else:
+                result.append(child.before)
+                child.send(' ')
+                continue
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None, ip, port]
+    rslt = ''.join(result).split('\r\n')[1:-1]
+    records = [x.replace('\x08', '').strip()
+               for x in rslt if '120 seconds' in x]
+    rec1 = [re.findall(r'(\d+) Bps', x)[0] for x in records]
+    rec2 = [round(int(x) * 8 / 1000000, 1) for x in rec1]
+    return ['success', rec2, ip, port]
 
 
 def main():
