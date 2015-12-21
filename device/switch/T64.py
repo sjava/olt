@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 import pexpect
 import sys
-import configparser
 import re
+from toolz import partition, partitionby
+from itertools import product
 
 pager = "--More--"
 logfile = sys.stdout
@@ -55,8 +56,43 @@ def card_check(ip='', username='', password='', super_password=''):
     card = [x.split(':')[1].strip() for x in info if 'Board Name' in x]
 
     rslt1 = ''.join(power).split('\r\n')[1:-1]
-    power1 = [(re.findall(r'\d+', x)[0], 'Power') for x in rslt1 if 'Work' in x and 'Power' in x]
+    power1 = [(re.findall(r'\d+', x)[0], 'Power')
+              for x in rslt1 if 'Work' in x and 'Power' in x]
     return ['success'] + [power1 + list(zip(slot, card))]
+
+
+def get_etrunk(ip='', username='', password='', super_password=''):
+    try:
+        result = []
+        child = telnet(ip, username, password, super_password)
+        child.sendline('show lacp internal')
+        while True:
+            index = child.expect(['#', pager])
+            if index == 0:
+                result.append(child.before)
+                child.sendline('exit')
+                child.close()
+                break
+            else:
+                result.append(child.before)
+                child.send(' ')
+                continue
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None, ip]
+    rslt = ''.join(result).split('\r\n')[1:-1]
+    rec = [x.replace('\x08', '').strip()
+           for x in rslt if 'Smartgroup' in x or 'selected' in x]
+
+    def ff(x):
+        if 'Smartgroup:' in x:
+            return re.findall(r'Smartgroup:(\d+)', x)[0]
+        else:
+            return x.split()[0]
+
+    rec1 = partitionby(lambda x: x.isdigit(), map(ff, rec))
+    rec2 = partition(2, rec1)
+    rec3 = [product(x[0][-1:], x[1]) for x in rec2]
+    return ['success', rec3, ip]
 
 
 def main():
