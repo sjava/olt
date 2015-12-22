@@ -12,8 +12,7 @@ logfile = sys.stdout
 
 
 def telnet(ip="", username='', password=''):
-    child = pexpect.spawn(
-        'telnet {0}'.format(ip), encoding='ISO-8859-1')
+    child = pexpect.spawn('telnet {0}'.format(ip), encoding='ISO-8859-1')
     child.logfile = logfile
     child.expect("User name:")
     child.sendline(username)
@@ -104,8 +103,7 @@ def svlan(ip='', username='', password=''):
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
-    info = [x.replace('\x1b[37D', '').strip()
-            for x in rslt if 'QinQ' in x]
+    info = [x.replace('\x1b[37D', '').strip() for x in rslt if 'QinQ' in x]
     records = list(map(
         lambda x: re.findall(r'\s(\d+)\sQinQ.*pon\s(\d/.*/\d)\s', x)[0], info))
     svlan = [(x[1], x[0]) for x in set(records)]
@@ -139,8 +137,7 @@ def zhongji(ip='', username='', password=''):
     try:
         result = []
         child = telnet(ip, username, password)
-        child.sendline(
-            "display cu section bbs-config | in link-aggregation")
+        child.sendline("display cu section bbs-config | in link-aggregation")
         while True:
             index = child.expect([hw_prompt, hw_pager], timeout=120)
             if index == 0:
@@ -164,9 +161,10 @@ def zhongji(ip='', username='', password=''):
         p = x[2].split(',')
         p1 = ['/'.join((x[1], y)) for y in p]
         return list(cons(x[0], p1))
+
     ff = lambda x, y: merge_with(compose(unique, concat), x, y)
     rec1 = [port(x) for x in rec]
-    rec2 = [{x[0]:x} for x in rec1]
+    rec2 = [{x[0]: x} for x in rec1]
     rec3 = reduce(ff, rec2, dict())
     return ['success', rec3, ip]
 
@@ -213,6 +211,27 @@ def traffic(ip='', username='', password='', port=''):
     rec1 = [round(int(x) * 8 / 1000000, 1) for x in rec]
 
     return ['success', rec1, ip, port]
+
+
+def doSomething(ip='', username='', password='', command=''):
+    try:
+        child = telnet(ip, username, password)
+        child.sendline('conf')
+        child.expect(hw_prompt)
+        child.sendline(command)
+        index = child.expect(['n]:', hw_prompt])
+        if index == 0:
+            child.sendline('y')
+            child.expect(hw_prompt)
+        child.sendline('quit')
+        child.expect(hw_prompt)
+        child.sendline('quit')
+        child.expect(':')
+        child.sendline('y')
+        child.close()
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', ip]
+    return ['success', ip]
 
 
 def main():
