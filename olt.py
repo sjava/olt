@@ -56,8 +56,7 @@ def card_entry(info):
         logging.write("{0}:{1}\n".format(olt, mark))
     if result and mark == 'success':
         ip = olt.split(',')[0]
-        node = graph.find_one(
-            'Olt', property_key='ip', property_value=ip)
+        node = graph.find_one('Olt', property_key='ip', property_value=ip)
         card_nodes = map(create_card_node, result)
         list(map(lambda x: graph.create((node, 'HAS', x)), card_nodes))
 
@@ -72,8 +71,7 @@ def card_entry_m(lock, info):
     if result and mark == 'success':
         ip = olt.split(',')[0]
         with lock:
-            node = graph.find_one(
-                'Olt', property_key='ip', property_value=ip)
+            node = graph.find_one('Olt', property_key='ip', property_value=ip)
             card_nodes = map(create_card_node, result)
             list(map(lambda x: graph.create((node, 'HAS', x)), card_nodes))
 
@@ -117,8 +115,7 @@ def output_power_info(info):
 
 def power_check():
     clear_log()
-    nodes = graph.find('Olt', property_key='company',
-                       property_value='hw')
+    nodes = graph.find('Olt', property_key='company', property_value='hw')
     olts = [(x['ip'], x['company'], x['area']) for x in nodes]
     funcy.lmap(funcy.compose(output_power_info, get_power), olts)
 
@@ -231,12 +228,13 @@ def hostname_check():
     list(map(lambda x: graph.cypher.execute(
         cmd, ip=x[0], hostname=x[1]), ip_hostname))
 
-
 ################################zhongji check###########################
-zte_zhongji = partial(
-    Zte.zhongji, username=zte_olt_username, password=zte_olt_password)
-hw_zhongji = partial(
-    Huawei.zhongji, username=hw_olt_username, password=hw_olt_password)
+zte_zhongji = partial(Zte.zhongji,
+                      username=zte_olt_username,
+                      password=zte_olt_password)
+hw_zhongji = partial(Huawei.zhongji,
+                     username=hw_olt_username,
+                     password=hw_olt_password)
 
 
 def get_zhongji(olt):
@@ -257,8 +255,10 @@ def zhongji_entry(lock, info):
             with open(result_file, 'a') as frslt:
                 for (k, v) in result.items():
                     for i in v:
-                        frslt.write("{ip},{sm},{interface}\n".format(
-                            ip=ip, sm=k, interface=i))
+                        frslt.write(
+                            "{ip},{sm},{interface}\n".format(ip=ip,
+                                                             sm=k,
+                                                             interface=i))
 
 
 def zhongji_check():
@@ -280,10 +280,12 @@ def zhongji_check():
         cmd, ip=x[0], sm=x[1], interface=x[2]), ports))
 
 #############################################traffic####################
-zte_traffic = partial(
-    Zte.traffic, username=zte_olt_username, password=zte_olt_password)
-hw_traffic = partial(
-    Huawei.traffic, username=hw_olt_username, password=hw_olt_password)
+zte_traffic = partial(Zte.traffic,
+                      username=zte_olt_username,
+                      password=zte_olt_password)
+hw_traffic = partial(Huawei.traffic,
+                     username=hw_olt_username,
+                     password=hw_olt_password)
 
 
 def get_traffic(olt):
@@ -297,13 +299,17 @@ def traffic_output(lock, info):
     mark, result, ip, port = info
     with lock:
         with open(log_file, 'a') as logging:
-            logging.write("{ip}:{port}:{mark}\n".format(
-                ip=ip, port=port, mark=mark))
+            logging.write("{ip}:{port}:{mark}\n".format(ip=ip,
+                                                        port=port,
+                                                        mark=mark))
     if result and mark == 'success':
         with lock:
             with open(result_file, 'a') as frslt:
-                frslt.write("{ip},{port},{down}M,{up}M\n".format(
-                    ip=ip, port=port, down=result[0], up=result[1]))
+                frslt.write("{ip},{port},{down}M,{up}M\n".format(ip=ip,
+                                                                 port=port,
+                                                                 down=result[
+                                                                     0],
+                                                                 up=result[1]))
 
 
 def traffic_check():
@@ -321,10 +327,30 @@ def traffic_check():
     pool.join()
 
 
+def hw_gpon():
+    clear_log()
+    cmd = 'match(n:Olt{company:\'hw\'})--(c:Card) where n.name contains \'GPBD\' return distinct n.ip'
+    nodes = graph.cypher.execute(cmd)
+    #  nodes = graph.find('Olt')
+    #  nodes = graph.find('Olt', property_key='ip', property_value='172.18.0.46')
+    command = 'xpon ont-interoperability-mode gpon tcont-pq-priority-reverse enable'
+    doSomething = partial(Huawei.doSomething,
+                          username=hw_olt_username,
+                          password=hw_olt_password,
+                          command=command)
+
+    def output(info):
+        mark, ip = info
+        with open(log_file, 'a') as logging:
+            logging.write("{ip}:{mark}\n".format(ip=ip, mark=mark))
+
+    list(map(compose(output, doSomething), nodes))
+
+
 def main():
     #  zhongji_check()
-    traffic_check()
-    #  pass
+    hw_gpon()
+    # pass
 
 
 if __name__ == '__main__':
