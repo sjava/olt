@@ -56,7 +56,8 @@ def card_entry(info):
         logging.write("{0}:{1}\n".format(olt, mark))
     if result and mark == 'success':
         ip = olt.split(',')[0]
-        node = graph.find_one('Olt', property_key='ip', property_value=ip)
+        node = graph.find_one(
+            'Olt', property_key='ip', property_value=ip)
         card_nodes = map(create_card_node, result)
         list(map(lambda x: graph.create((node, 'HAS', x)), card_nodes))
 
@@ -71,7 +72,8 @@ def card_entry_m(lock, info):
     if result and mark == 'success':
         ip = olt.split(',')[0]
         with lock:
-            node = graph.find_one('Olt', property_key='ip', property_value=ip)
+            node = graph.find_one(
+                'Olt', property_key='ip', property_value=ip)
             card_nodes = map(create_card_node, result)
             list(map(lambda x: graph.create((node, 'HAS', x)), card_nodes))
 
@@ -115,7 +117,8 @@ def output_power_info(info):
 
 def power_check():
     clear_log()
-    nodes = graph.find('Olt', property_key='company', property_value='hw')
+    nodes = graph.find('Olt', property_key='company',
+                       property_value='hw')
     olts = [(x['ip'], x['company'], x['area']) for x in nodes]
     funcy.lmap(funcy.compose(output_power_info, get_power), olts)
 
@@ -329,8 +332,9 @@ def traffic_check():
 
 def hw_gpon():
     clear_log()
-    cmd = 'match(n:Olt{company:\'hw\'})--(c:Card) where n.name contains \'GPBD\' return distinct n.ip'
+    cmd = 'match(n:Olt{company:\'hw\'})--(c:Card) where c.name contains \'GPBD\' return distinct n.ip'
     nodes = graph.cypher.execute(cmd)
+    olts = [x[0] for x in nodes]
     #  nodes = graph.find('Olt')
     #  nodes = graph.find('Olt', property_key='ip', property_value='172.18.0.46')
     command = 'xpon ont-interoperability-mode gpon tcont-pq-priority-reverse enable'
@@ -344,13 +348,13 @@ def hw_gpon():
         with open(log_file, 'a') as logging:
             logging.write("{ip}:{mark}\n".format(ip=ip, mark=mark))
 
-    list(map(compose(output, doSomething), nodes))
+    list(map(compose(output, doSomething), olts))
 
 
 def main():
     #  zhongji_check()
-    hw_gpon()
-    # pass
+    #  hw_gpon()
+    pass
 
 
 if __name__ == '__main__':
