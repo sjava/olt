@@ -7,11 +7,13 @@ from toolz import partitionby, partition
 from itertools import product
 
 pager = "---- More ----"
+prompter = "]"
 logfile = sys.stdout
 
 
 def telnet(ip, username, password, super_password):
-    child = pexpect.spawn('telnet {0}'.format(ip), encoding='ISO-8859-1')
+    child = pexpect.spawn(
+        'telnet {0}'.format(ip), encoding='ISO-8859-1')
     child.logfile = logfile
 
     child.expect('Username:')
@@ -29,6 +31,22 @@ def telnet(ip, username, password, super_password):
         child.sendline('sys')
     child.expect(']')
     return child
+
+
+def doSome(child, command):
+    result = []
+    child.sendline(command)
+    while True:
+        index = child.expect([prompter, pager], timeout=120)
+        if index == 0:
+            result.append(child.before)
+            break
+        else:
+            result.append(child.before)
+            child.send(" ")
+            continue
+    rslt = ''.join(result).replace('\x1b[42D', '')
+    return rslt.strip(command + '\r\n')
 
 
 def card_check(ip='', username='', password='', super_password=''):
@@ -93,6 +111,19 @@ def get_etrunk(ip='', username='', password='', super_password=''):
     rec2 = partition(2, rec1)
     rec3 = [product(x[0][-1:], x[1]) for x in rec2]
     return ['success', rec3, ip]
+
+
+def get_interface(ip='', username='', password='', super_password=''):
+    try:
+        child = telnet(ip, username, password, super_password)
+        rslt = doSome(child, 'disp interface brief')
+        child.sendline('quit')
+        child.expect('>')
+        child.sendline('quit')
+        child.close()
+    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        return ['fail', None, ip]
+    return rslt
 
 
 def main():

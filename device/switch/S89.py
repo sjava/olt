@@ -8,11 +8,13 @@ from toolz import partition, partitionby
 from itertools import product
 
 pager = "--More--"
+prompt = "#"
 logfile = sys.stdout
 
 
 def telnet(ip, username, password, super_password):
-    child = pexpect.spawn('telnet {0}'.format(ip), encoding='ISO-8859-1')
+    child = pexpect.spawn(
+        'telnet {0}'.format(ip), encoding='ISO-8859-1')
     child.logfile = logfile
 
     child.expect('Username:')
@@ -28,39 +30,55 @@ def telnet(ip, username, password, super_password):
     return child
 
 
+def doSome(child, command):
+    result = []
+    child.sendline(command)
+    while True:
+        index = child.expect([prompt, pager], timeout=120)
+        if index == 0:
+            result.append(child.before)
+            break
+        else:
+            result.append(child.before)
+            child.send(' ')
+            continue
+    rslt = ''.join(result).replace('\x08', '')
+    return rslt.strip(command + '\r\n')
+
+
 def card_check(ip='', username='', password='', super_password=''):
     return T64.card_check(ip, username, password, super_password)
 
 
-def get_etrunk(ip='', username='', password='', super_password=''):
+def get_interface(ip='', username='', password='', super_password=''):
+    def port(rec):
+        name, state = re.findall(r'^([xgs]\S+) is (.*),', rec)[0]
+        description = re.findall(r'Description is (.+)\r\n', rec)[0]
+        return dict(name=name, state=state, description=description)
+
     try:
-        result = []
         child = telnet(ip, username, password, super_password)
-        child.sendline('show lacp internal')
-        while True:
-            index = child.expect(['#', pager])
-            if index == 0:
-                result.append(child.before)
-                child.sendline('exit')
-                child.close()
-                break
-            else:
-                result.append(child.before)
-                child.send(' ')
-                continue
+        rslt = doSome(child, 'show interface')
+        rec1 = re.split(r'\r\n +\r\n *', rslt)[:-1]
+        rec2 = [x for x in rec1 if re.search(
+            r'^[xgs]\S+ is .*,', x)]
+        ports = [port(x) for x in rec2]
+
+        def linkagg(port):
+            if port["name"].startswith('smartgroup'):
+                id = port["name"].replace('smartgroup', '')
+                rslt = doSome(
+                    child, 'show lacp {id} internal'.format(id=id))
+                rslt1 = rslt.split('\r\n')
+                pt = [x.split()[0] for x in rslt1 if 'active' in x]
+                if pt:
+                    port['linkaggs'] = pt
+            return port
+
+        ports1 = [linkagg(x) for x in ports]
+
+        child.sendline('exit')
+        child.close()
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
-        return ['fail', None, ip]
-    rslt = ''.join(result).split('\r\n')[1:-1]
-    rec = [x.replace('\x08', '').strip()
-           for x in rslt if 'Smartgroup' in x or 'active' in x]
-
-    def ff(x):
-        if 'Smartgroup:' in x:
-            return re.findall(r'Smartgroup:(\d+)', x)[0]
-        else:
-            return x.split()[0]
-
-    rec1 = partitionby(lambda x: x.isdigit(), map(ff, rec))
-    rec2 = partition(2, rec1)
-    rec3 = [product(x[0][-1:], x[1]) for x in rec2]
-    return ['success', rec3, ip]
+        return ('fail', None, ip)
+    return ('success', ports1, ip)
