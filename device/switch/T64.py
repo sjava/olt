@@ -42,7 +42,7 @@ def doSome(child, command):
             child.send(' ')
             continue
     rslt = ''.join(result).replace('\x08', '')
-    return rslt.strip(command + '\r\n')
+    return rslt.replace(command + '\r\n', '', 1)
 
 
 def card_check(ip='', username='', password='', super_password=''):

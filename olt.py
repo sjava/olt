@@ -302,17 +302,13 @@ def traffic_output(lock, info):
     mark, result, ip, port = info
     with lock:
         with open(log_file, 'a') as logging:
-            logging.write("{ip}:{port}:{mark}\n".format(ip=ip,
-                                                        port=port,
-                                                        mark=mark))
+            logging.write("{ip}:{port}:{mark}\n".format(
+                ip=ip, port=port, mark=mark))
     if result and mark == 'success':
         with lock:
             with open(result_file, 'a') as frslt:
-                frslt.write("{ip},{port},{down}M,{up}M\n".format(ip=ip,
-                                                                 port=port,
-                                                                 down=result[
-                                                                     0],
-                                                                 up=result[1]))
+                frslt.write("{ip},{port},{down}M,{up}M\n".format(
+                    ip=ip, port=port, down=result[0], up=result[1]))
 
 
 def traffic_check():
@@ -355,6 +351,7 @@ def main():
     #  zhongji_check()
     #  hw_gpon()
     pass
+    #  traffic_check()
 
 
 if __name__ == '__main__':
