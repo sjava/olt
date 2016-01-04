@@ -259,9 +259,7 @@ def zhongji_entry(lock, info):
                 for (k, v) in result.items():
                     for i in v:
                         frslt.write(
-                            "{ip},{sm},{interface}\n".format(ip=ip,
-                                                             sm=k,
-                                                             interface=i))
+                            "{ip},{sm},{interface}\n".format(ip=ip, sm=k, interface=i))
 
 
 def zhongji_check():
@@ -350,8 +348,8 @@ def hw_gpon():
 def main():
     #  zhongji_check()
     #  hw_gpon()
-    pass
-    #  traffic_check()
+    #  pass
+    traffic_check()
 
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ import pexpect
 import sys
 import re
 from toolz import concatv
+from functools import reduce
 
 pager = "---- More ----"
 prompter = "]"
@@ -85,15 +86,29 @@ def get_interface(ip='', username='', password='', super_password=''):
     def linkagg(record):
         name = re.findall(r'(Aggregation ID: \d+),', record)[0]
         description = re.findall(r'Description:(.*)\r\n', record)[0]
-        links = re.findall(r'(X?Gigabit\S+)', record)
-        return dict(name=name, description=description, linkaggs=links, state='UP')
+        links = re.findall(r'(X?Gigabit\S+)\s+S', record)
+        if links and links[0].startswith('Giga'):
+            bw = 1000 * len(links)
+        else:
+            bw = 10000 * len(links)
+        return dict(name=name, bw=bw, description=description, linkaggs=links, state='UP', logical='yes')
 
     def port(record):
         name, state = re.findall(
             r'(X?Gigabit\S+).*current state : ?(.*)\r\n', record)[0]
         description = re.findall(r'Description: (.*)\r\n', record)
         desc = description[0] if description else 'none'
-        return dict(name=name, state=state, description=desc)
+        bw = 1000 if name.startswith('Giga') else 10000
+        in_traffic = re.findall(
+            r'input:\s+\d+\s+packets/sec\s+(\d+)\s+bits/sec', record)[0]
+        out_traffic = re.findall(
+            r'output:\s+\d+\s+packets/sec\s+(\d+)\s+bits/sec', record)[0]
+        in_traffic = int(in_traffic) / (1000000 * bw)
+        out_traffic = int(out_traffic) / (1000000 * bw)
+        in_traffic = round(in_traffic, 2)
+        out_traffic = round(out_traffic, 2)
+        return dict(name=name, state=state, description=desc, in_traffic=in_traffic,
+                    out_traffic=out_traffic, logical='no', bw=bw)
 
     try:
         child = telnet(ip, username, password, super_password)
@@ -103,35 +118,39 @@ def get_interface(ip='', username='', password='', super_password=''):
         rslt3 = [linkagg(x) for x in rslt2]
 
         info = doSome(child, 'disp interface')
+        child.sendline('quit')
+        child.expect('>')
+        child.sendline('quit')
+        child.close()
+
         info1 = re.split(r'\r\n *\r\n', info)
         info2 = [x for x in info1 if re.search(r'X?GigabitEthernet', x)]
         info3 = [port(x) for x in info2]
 
-        child.sendline('quit')
-        child.expect('>')
-        child.sendline('quit')
-        child.close()
-    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+        in_sum = lambda x, y: x + y['in_traffic'] * y['bw']
+        out_sum = lambda x, y: x + y['out_traffic'] * y['bw']
+        is_desc = lambda x: re.search(
+            r'[du]t:[^:]+', x['description'], flags=re.I)
+        for x in rslt3:
+            temp = [y for y in info3 if y['name'] in x['linkaggs']]
+            if x['bw'] == 0:
+                in_traffic = 0
+                out_traffic = 0
+            else:
+                in_traffic = round(reduce(in_sum, temp, 0) / x['bw'], 2)
+                out_traffic = round(
+                    reduce(out_sum, temp, 0) / x['bw'], 2)
+            x['in_traffic'] = in_traffic
+            x['out_traffic'] = out_traffic
+            desc = list(filter(is_desc, temp))
+
+            if desc:
+                x['description'] = re.findall(
+                    r'([du]t:[^:]+)', desc[0]['description'], flags=re.I)[0]
+
+    except Exception as e:
         return ('fail', None, ip)
     return ('success', list(concatv(info3, rslt3)), ip)
-
-
-def get_port_traffic(ip='', username='', password='', super_password='', port=''):
-    try:
-        child = telnet(ip, username, password, super_password)
-        rslt = doSome(child, 'disp interface {port}'.format(port=port))
-        in_traffic = re.findall(
-            r'input:\s+\d+\s+packets/sec\s+(\d+)\s+bits/sec', rslt)[0]
-        out_traffic = re.findall(
-            r'output:\s+\d+\s+packets/sec\s+(\d+)\s+bits/sec', rslt)[0]
-
-        child.sendline('quit')
-        child.expect('>')
-        child.sendline('quit')
-        child.close()
-    except (pexpect.EOF, pexpect.TIMEOUT) as e:
-        return('fail', None, ip)
-    return ('success', (in_traffic, out_traffic), ip)
 
 
 def main():

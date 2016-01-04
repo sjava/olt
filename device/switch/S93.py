@@ -79,8 +79,21 @@ def card_check(ip='', username='', password='', super_password=''):
 
 def get_interface(ip='', username='', password='', super_password=''):
     def port(record):
-        name, state = record.split()[:2]
-        return dict(name=name, state=state)
+        rr = record.split()
+        name, state = rr[:2]
+        in_traffic, out_traffic = rr[3:5]
+        in_traffic = float(in_traffic.replace('%', '')) / 100
+        in_traffic = round(in_traffic, 2)
+        out_traffic = float(out_traffic.replace('%', '')) / 100
+        out_traffic = round(out_traffic, 2)
+        logical = 'yes' if name.startswith('Eth-Trunk') else 'no'
+        if name.startswith('XGiga'):
+            bw = 10000
+        elif name.startswith('Giga'):
+            bw = 1000
+        else:
+            bw = 0
+        return dict(name=name, state=state.upper(), bw=bw, logical=logical, in_traffic=in_traffic, out_traffic=out_traffic)
 
     try:
         child = telnet(ip, username, password, super_password)
@@ -90,13 +103,20 @@ def get_interface(ip='', username='', password='', super_password=''):
         rec2 = [port(x) for x in rec1]
 
         def desc_linkagg(record):
-            rslt = doSome(child, 'disp interface {interface}'.format(
-                interface=record['name']))
+            rslt = doSome(child, 'disp interface {name}'.format(
+                name=record['name']))
             description = re.findall(r'Description:(.*)\r\n', rslt)[0]
             record['description'] = description
             if record['name'].startswith('Eth-Trunk'):
-                links = re.findall(r'([XG]igabit\S+)', rslt)
+                links = re.findall(r'(X?Gigabit\S+)', rslt)
                 record['linkaggs'] = links
+                bw = 0
+                for x in links:
+                    if x.startswith('XGiga'):
+                        bw = bw + 10000
+                    else:
+                        bw = bw + 1000
+                record['bw'] = bw
             return record
 
         rec3 = [desc_linkagg(x) for x in rec2]
@@ -104,7 +124,7 @@ def get_interface(ip='', username='', password='', super_password=''):
         child.expect('>')
         child.sendline('quit')
         child.close()
-    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+    except Exception as e:
         return ('fail', None, ip)
     return ('success', rec3, ip)
 

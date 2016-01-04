@@ -12,7 +12,8 @@ logfile = sys.stdout
 
 
 def telnet(ip="", username='', password=''):
-    child = pexpect.spawn('telnet {0}'.format(ip), encoding='ISO-8859-1')
+    child = pexpect.spawn(
+        'telnet {0}'.format(ip), encoding='ISO-8859-1')
     child.logfile = logfile
     child.expect("User name:")
     child.sendline(username)
@@ -27,6 +28,22 @@ def telnet(ip="", username='', password=''):
     child.sendline('undo terminal monitor')
     child.expect(hw_prompt)
     return child
+
+
+def doSome(child, command):
+    result = []
+    child.sendline(command)
+    while True:
+        index = child.expect([hw_prompt, hw_pager], timeout=120)
+        if index == 0:
+            result.append(child.before)
+            break
+        else:
+            result.append(child.before)
+            child.send(' ')
+            continue
+    rslt = ''.join(result).replace('\x1b[37D', '')
+    return rslt.replace(command + '\r\n', '', 1)
 
 
 def card_check(ip='', username='', password=''):
@@ -103,7 +120,8 @@ def svlan(ip='', username='', password=''):
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
         return ['fail', None]
     rslt = ''.join(result).split('\r\n')[1:-1]
-    info = [x.replace('\x1b[37D', '').strip() for x in rslt if 'QinQ' in x]
+    info = [x.replace('\x1b[37D', '').strip()
+            for x in rslt if 'QinQ' in x]
     records = list(map(
         lambda x: re.findall(r'\s(\d+)\sQinQ.*pon\s(\d/.*/\d)\s', x)[0], info))
     svlan = [(x[1], x[0]) for x in set(records)]
@@ -137,7 +155,8 @@ def zhongji(ip='', username='', password=''):
     try:
         result = []
         child = telnet(ip, username, password)
-        child.sendline("display cu section bbs-config | in link-aggregation")
+        child.sendline(
+            "display cu section bbs-config | in link-aggregation")
         while True:
             index = child.expect([hw_prompt, hw_pager], timeout=120)
             if index == 0:

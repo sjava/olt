@@ -5,6 +5,7 @@ import sys
 import re
 from toolz import partition, partitionby
 from itertools import product
+from functools import reduce
 
 pager = "--More--"
 prompter = "#"
@@ -85,7 +86,26 @@ def get_interface(ip='', username='', password='', super_password=''):
         if temp:
             name, state = temp[0]
             description = re.findall(r'Description is (.+)\r\n', rec)[0]
-            return dict(name=name, state=state, description=description)
+            bw = re.findall(r'BW\s+(\d+)\s+Kbits', rec)
+            if bw:
+                bw = int(bw[0]) / 1000
+            else:
+                bw = 0
+            if name.startswith('smartgroup'):
+                logical = 'yes'
+            else:
+                logical = 'no'
+            traffic = re.findall(
+                r'utilization:\s+input\s+(\d+)%,\s+output\s+(\d+)%', rec)
+            if traffic:
+                in_traffic, out_traffic = traffic[0]
+                in_traffic = round(float(in_traffic) / 100, 2)
+                out_traffic = round(float(out_traffic) / 100, 2)
+            else:
+                in_traffic = 0
+                out_traffic = 0
+            return dict(name=name, state=state, description=description,
+                        logical=logical, bw=bw, in_traffic=in_traffic, out_traffic=out_traffic)
         else:
             return dict()
     try:
@@ -102,15 +122,25 @@ def get_interface(ip='', username='', password='', super_password=''):
                     child, 'show lacp {id} internal'.format(id=id))
                 rslt1 = rslt.split('\r\n')
                 pt = [x.split()[0] for x in rslt1 if 'selected' in x]
-                if pt:
-                    port['linkaggs'] = pt
+                port['linkaggs'] = pt
+                temp = [x for x in ports if x['name'] in pt]
+                in_sum = lambda x, y: x + y['in_traffic'] * y['bw']
+                out_sum = lambda x, y: x + y['out_traffic'] * y['bw']
+                if port['bw']:
+                    in_traffic = reduce(in_sum, temp, 0) / port['bw']
+                    out_traffic = reduce(out_sum, temp, 0) / port['bw']
+                else:
+                    in_traffic = 0
+                    out_traffic = 0
+                port['in_traffic'] = round(in_traffic, 2)
+                port['out_traffic'] = round(out_traffic, 2)
             return port
 
         ports1 = [linkagg(x) for x in ports]
 
         child.sendline('exit')
         child.close()
-    except (pexpect.EOF, pexpect.TIMEOUT) as e:
+    except Exception as e:
         return ('fail', None, ip)
     return ('success', ports1, ip)
 
