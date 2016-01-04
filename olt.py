@@ -281,47 +281,50 @@ def zhongji_check():
         cmd, ip=x[0], sm=x[1], interface=x[2]), ports))
 
 #############################################traffic####################
-zte_traffic = partial(Zte.traffic,
+zte_traffic = partial(Zte.get_traffics,
                       username=zte_olt_username,
                       password=zte_olt_password)
-hw_traffic = partial(Huawei.traffic,
+hw_traffic = partial(Huawei.get_traffics,
                      username=hw_olt_username,
                      password=hw_olt_password)
 
 
 def get_traffic(olt):
     functions = dict(hw=hw_traffic, zte=zte_traffic)
-    no_company = lambda x, y: ['fail', None, x, y]
-    ip, company, port = olt
-    return functions.get(company, no_company)(ip=ip, port=port)
+    no_company = lambda x, y: ['fail', None, x]
+    ip, company, ports = olt
+    return functions.get(company, no_company)(ip=ip, ports=ports)
 
 
 def traffic_output(lock, info):
-    mark, result, ip, port = info
+    mark, result, ip = info
     with lock:
         with open(log_file, 'a') as logging:
-            logging.write("{ip}:{port}:{mark}\n".format(
-                ip=ip, port=port, mark=mark))
+            logging.write("{ip}:{mark}\n".format(ip=ip, mark=mark))
     if result and mark == 'success':
         with lock:
-            with open(result_file, 'a') as frslt:
-                frslt.write("{ip},{port},{down}M,{up}M\n".format(
-                    ip=ip, port=port, down=result[0], up=result[1]))
+            for r in result:
+                with open(result_file, 'a') as frslt:
+                    frslt.write("{ip},{port},{down},{up}\n".format(
+                        ip=ip, port=r['name'].strip(), down=r['in_traffic'], up=r['out_traffic']))
 
 
 def traffic_check():
-    clear_log()
-    cmd = 'match(n:Olt)-[*]-(p:Port) return n.ip,n.company,p.name'
-    nodes = graph.cypher.execute(cmd)
-    #  nodes = graph.find('Olt')
-    #  nodes = graph.find('Olt', property_key='ip', property_value='172.18.0.46')
-    olts = [(x[0], x[1], x[2].strip()) for x in nodes]
-    pool = Pool(16)
-    lock = Manager().Lock()
-    func = partial(traffic_output, lock)
-    list(pool.map(compose(func, get_traffic), olts))
-    pool.close()
-    pool.join()
+    #  clear_log()
+    #  cmd = 'match(n:Olt)-[*]-(p:Port) where n.company="hw"  return n.ip,n.company,collect(p.name)'
+    #  nodes = graph.cypher.execute(cmd)
+    #  olts = [(x[0], x[1], x[2]) for x in nodes]
+    #  pool = Pool(16)
+    #  lock = Manager().Lock()
+    #  func = partial(traffic_output, lock)
+    #  list(pool.map(compose(func, get_traffic), olts))
+    #  pool.close()
+    #  pool.join()
+
+    records = (x.split(',') for x in open(result_file))
+    cmd = "match (n:Olt)-[*]-(p:Port) where n.ip={ip} and p.name={name} set p.in_traffic={i},p.out_traffic={o}"
+    list(map(lambda x: graph.cypher.execute(
+        cmd, ip=x[0], name=x[1], i=x[2], o=x[3]), records))
 
 
 def hw_gpon():

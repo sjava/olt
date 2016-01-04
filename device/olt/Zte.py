@@ -6,9 +6,12 @@ import configparser
 from itertools import product
 from toolz import unique, partition, partitionby, remove
 import re
+from functools import partial
 
 zte_prompt = "#"
 zte_pager = "--More--"
+prompter = "#"
+pager = "--More--"
 logfile = sys.stdout
 
 
@@ -23,6 +26,21 @@ def telnet(ip="", username="", password=""):
     child.sendline(password)
     child.expect(zte_prompt)
     return child
+
+
+def doSome(child, cmd):
+    result = []
+    child.sendline(cmd)
+    while True:
+        index = child.expect([prompter, pager], timeout=120)
+        result.append(child.before)
+        if index == 0:
+            break
+        else:
+            child.send(' ')
+            continue
+    rslt = ''.join(result).replace('\x08', '')
+    return rslt.replace(cmd + '\r\n', '')
 
 
 def card_check(ip='', username='', password=''):
@@ -156,30 +174,24 @@ def zhongji(ip='', username='', password=''):
     return ['success', rec3, ip]
 
 
-def traffic(ip='', username='', password='', port=''):
+def get_port_traffic(child, port):
+    rslt = doSome(child, 'show interface {port}'.format(port=port))
+    rslt1 = re.findall(r'120 seconds\D+(\d+) Bps,', rslt)
+    r, s = [round(int(x) * 8 / 1000000, 1) for x in rslt1]
+    return dict(name=port, in_traffic=r, out_traffic=s)
+
+
+def get_traffics(ip='', username='', password='', ports=''):
     try:
         result = []
         child = telnet(ip, username, password)
-        child.sendline("show interface {port}".format(port=port))
-        while True:
-            index = child.expect([zte_prompt, zte_pager], timeout=120)
-            if index == 0:
-                result.append(child.before)
-                child.sendline('exit')
-                child.close()
-                break
-            else:
-                result.append(child.before)
-                child.send(' ')
-                continue
-    except (pexpect.EOF, pexpect.TIMEOUT) as e:
-        return ['fail', None, ip, port]
-    rslt = ''.join(result).split('\r\n')[1:-1]
-    records = [x.replace('\x08', '').strip()
-               for x in rslt if '120 seconds' in x]
-    rec1 = [re.findall(r'(\d+) Bps', x)[0] for x in records]
-    rec2 = [round(int(x) * 8 / 1000000, 1) for x in rec1]
-    return ['success', rec2, ip, port]
+        gpt = partial(get_port_traffic, child)
+        traffics = [gpt(x) for x in ports]
+        child.sendline('exit')
+        child.close()
+    except Exception as e:
+        return ('fail', None, ip)
+    return ('success', traffics, ip)
 
 
 def main():

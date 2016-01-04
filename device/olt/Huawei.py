@@ -4,10 +4,12 @@ import pexpect
 import sys
 import re
 from toolz import cons, concat, unique, merge_with, compose
-from functools import reduce
+from functools import reduce, partial
 
 hw_prompt = "#"
 hw_pager = "---- More.*----"
+prompter = "#"
+pager = "---- More.*----"
 logfile = sys.stdout
 
 
@@ -34,12 +36,11 @@ def doSome(child, command):
     result = []
     child.sendline(command)
     while True:
-        index = child.expect([hw_prompt, hw_pager], timeout=120)
+        index = child.expect([prompter, pager], timeout=120)
+        result.append(child.before)
         if index == 0:
-            result.append(child.before)
             break
         else:
-            result.append(child.before)
             child.send(' ')
             continue
     rslt = ''.join(result).replace('\x1b[37D', '')
@@ -188,48 +189,41 @@ def zhongji(ip='', username='', password=''):
     return ['success', rec3, ip]
 
 
-def traffic(ip='', username='', password='', port=''):
+def get_port_traffic(child, port):
+    s, p = port.rsplit('/', 1)
+    child.sendline('conf')
+    child.expect(prompter)
+    child.sendline('interface giu {slot}'.format(slot=s))
+    child.expect(prompter)
+    temp = child.before
+    if 'Failure:' in temp:
+        child.sendline('interface eth {slot}'.format(slot=s))
+        child.expect(prompter)
+    rslt = doSome(child, 'disp port traffic {port}'.format(port=p))
+    child.expect(prompter)
+    child.sendline('quit')
+    child.expect(prompter)
+    child.sendline('quit')
+    child.expect(prompter)
+    rslt1 = rslt.split('\r\n')
+    rec = [x.strip().split('=')[1] for x in rslt1 if 'octets' in x]
+    rec1 = [round(int(x) * 8 / 1000000, 1) for x in rec]
+    return dict(name=port, in_traffic=rec1[0], out_traffic=rec1[1])
+
+
+def get_traffics(ip='', username='', password='', ports=None):
     try:
-        result = []
         child = telnet(ip, username, password)
-        s, p = port.rsplit('/', 1)
-        child.sendline('disp board {slot}'.format(slot=s))
-        while True:
-            index = child.expect([hw_prompt, hw_pager], timeout=120)
-            if index == 0:
-                result.append(child.before)
-                break
-            else:
-                result.append(child.before)
-                child.send(" ")
-                continue
-        if 'GICF' in ''.join(result):
-            cmd = 'interface giu {slot}'.format(slot=s)
-        else:
-            cmd = 'interface eth {slot}'.format(slot=s)
-        child.sendline('conf')
-        child.expect(hw_prompt)
-        child.sendline(cmd)
-        child.expect(hw_prompt)
-        child.sendline('disp port traffic {port}'.format(port=p))
-        child.expect(hw_prompt)
-        rslt = child.before
-        child.sendline('quit')
-        child.expect(hw_prompt)
-        child.sendline('quit')
-        child.expect(hw_prompt)
+        gpt = partial(get_port_traffic, child)
+        traffics = [gpt(x) for x in ports]
         child.sendline('quit')
         child.expect(':')
         child.sendline('y')
         child.close()
     except (pexpect.EOF, pexpect.TIMEOUT) as e:
-        return ['fail', None, ip, port]
-    rslt1 = rslt.split('\r\n')[1:-1]
-    rec = [x.replace('\x1b[37D', '').strip().split('=')[1]
-           for x in rslt1 if 'octets' in x]
-    rec1 = [round(int(x) * 8 / 1000000, 1) for x in rec]
+        return ['fail', None, ip]
 
-    return ['success', rec1, ip, port]
+    return ['success', traffics, ip]
 
 
 def doSomething(ip='', username='', password='', command=''):
